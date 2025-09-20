@@ -590,6 +590,11 @@
             background-size: 200px 100%;
             animation: shimmer 1.5s infinite;
         }
+
+        .sidebar-scrollable {
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
@@ -1518,7 +1523,7 @@
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept=".xlsx,.xls"
+                                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                                 onChange={handleFileUpload}
                                 disabled={isUploading || quizStarted}
                                 className="w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:transition-colors disabled:opacity-50"
