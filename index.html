@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thi Trắc Nghiệm Online - Modern UI</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        :root {
+            --primary-50: #f0f9ff;
+            --primary-100: #e0f2fe;
+            --primary-200: #bae6fd;
+            --primary-300: #7dd3fc;
+            --primary-400: #38bdf8;
+            --primary-500: #0ea5e9;
+            --primary-600: #0284c7;
+            --primary-700: #0369a1;
+            --primary-800: #075985;
+            --primary-900: #0c4a6e;
+            
+            --secondary-50: #fafafa;
+            --secondary-100: #f4f4f5;
+            --secondary-200: #e4e4e7;
+            --secondary-300: #d4d4d8;
+            --secondary-400: #a1a1aa;
+            --secondary-500: #71717a;
+            --secondary-600: #52525b;
+            --secondary-700: #3f3f46;
+            --secondary-800: #27272a;
+            --secondary-900: #18181b;
+            
+            --success-50: #f0fdf4;
+            --success-100: #dcfce7;
+            --success-200: #bbf7d0;
+            --success-500: #22c55e;
+            --success-600: #16a34a;
+            --success-700: #15803d;
+            
+            --error-50: #fef2f2;
+            --error-100: #fee2e2;
+            --error-200: #fecaca;
+            --error-500: #ef4444;
+            --error-600: #dc2626;
+            --error-700: #b91c1c;
+            
+            --warning-50: #fffbeb;
+            --warning-100: #fef3c7;
+            --warning-200: #fde68a;
+            --warning-500: #f59e0b;
+            --warning-600: #d97706;
+            
+            --purple-50: #faf5ff;
+            --purple-100: #f3e8ff;
+            --purple-200: #e9d5ff;
+            --purple-500: #a855f7;
+            --purple-600: #9333ea;
+            --purple-700: #7c3aed;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .gradient-primary {
+            background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+        }
+        
+        .gradient-success {
+            background: linear-gradient(135deg, var(--success-500) 0%, var(--success-600) 100%);
+        }
+        
+        .gradient-error {
+            background: linear-gradient(135deg, var(--error-500) 0%, var(--error-600) 100%);
+        }
+        
+        .gradient-purple {
+            background: linear-gradient(135deg, var(--purple-500) 0%, var(--purple-600) 100%);
+        }
+        
+        .gradient-hero {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--purple-600) 50%, var(--primary-700) 100%);
+        }
+
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .card-shadow-lg {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-shadow-xl {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-primary {
+            background: var(--primary-600);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-700);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--secondary-100);
+            color: var(--secondary-700);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 500;
+            border: 1px solid var(--secondary-200);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--secondary-200);
+            border-color: var(--secondary-300);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success-600);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-success:hover {
+            background: var(--success-700);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-error {
+            background: var(--error-600);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-error:hover {
+            background: var(--error-700);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-purple {
+            background: var(--purple-600);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-purple:hover {
+            background: var(--purple-700);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 1.5px solid var(--secondary-200);
+            border-radius: 0.75rem;
+            background: white;
+            color: var(--secondary-800);
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, var(--secondary-50) 0%, white 100%);
+            border-right: 1px solid var(--secondary-200);
+            min-height: 100vh;
+            width: 320px;
+            transition: all 0.3s ease;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid var(--secondary-100);
+            transition: all 0.2s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.15);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 0.5rem;
+            background: var(--secondary-200);
+            border-radius: 0.25rem;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-500), var(--primary-400));
+            border-radius: 0.25rem;
+            transition: width 0.3s ease;
+        }
+
+        .question-option {
+            border: 2px solid var(--secondary-200);
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .question-option:hover {
+            border-color: var(--primary-300);
+            background: var(--primary-50);
+            transform: translateY(-1px);
+        }
+        
+        .question-option.selected {
+            border-color: var(--primary-500);
+            background: var(--primary-50);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .question-nav-btn {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            border: 1.5px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            font-size: 0.9rem;
+        }
+        
+        .question-nav-btn.current {
+            background: var(--primary-600);
+            color: white;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+            transform: scale(1.05);
+        }
+        
+        .question-nav-btn.answered {
+            background: var(--success-100);
+            color: var(--success-700);
+            border-color: var(--success-200);
+        }
+        
+        .question-nav-btn.unanswered {
+            background: var(--secondary-100);
+            color: var(--secondary-600);
+            border-color: var(--secondary-200);
+        }
+        
+        .question-nav-btn:hover:not(.current) {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .multi-choice-indicator {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 12px;
+            height: 12px;
+            background: var(--warning-500);
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 1.25rem;
+            padding: 2rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--secondary-100);
+        }
+
+        .timer {
+            font-family: 'Inter', monospace;
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+        
+        .timer.warning {
+            color: var(--error-600);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .status-badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        .status-badge.pass {
+            background: var(--success-100);
+            color: var(--success-700);
+        }
+        
+        .status-badge.fail {
+            background: var(--error-100);
+            color: var(--error-700);
+        }
+
+        .history-item {
+            background: white;
+            border: 1px solid var(--secondary-200);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .history-item:hover {
+            border-color: var(--primary-300);
+            background: var(--primary-25);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--secondary-300);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--secondary-50);
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-400);
+            background: var(--primary-50);
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--primary-500);
+            background: var(--primary-100);
+        }
+
+        .topic-select {
+            max-height: 140px;
+            overflow-y: auto;
+            border: 1.5px solid var(--secondary-200);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            background: white;
+        }
+
+        .checkbox-custom {
+            appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid var(--secondary-300);
+            border-radius: 0.25rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .checkbox-custom:checked {
+            background: var(--primary-600);
+            border-color: var(--primary-600);
+        }
+        
+        .checkbox-custom:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: 700;
+            font-size: 0.75rem;
+        }
+
+        .radio-custom {
+            appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid var(--secondary-300);
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .radio-custom:checked {
+            border-color: var(--primary-600);
+        }
+        
+        .radio-custom:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0.5rem;
+            height: 0.5rem;
+            background: var(--primary-600);
+            border-radius: 50%;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .sidebar { 
+                position: fixed;
+                left: -100%;
+                top: 0;
+                transition: left 0.3s ease;
+                z-index: 999;
+                width: 300px;
+            }
+            .sidebar.open { left: 0; }
+            .main-content { width: 100%; }
+            .mobile-menu-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 998;
+            }
+            .mobile-header {
+                display: block;
+                background: white;
+                padding: 1rem;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                margin-bottom: 1rem;
+                border-bottom: 1px solid var(--secondary-200);
+            }
+            .desktop-layout { display: none; }
+            .mobile-layout { display: block; }
+            .question-nav-btn { 
+                width: 2.5rem; 
+                height: 2.5rem; 
+                font-size: 0.85rem;
+            }
+            .modal-content { 
+                margin: 0.5rem; 
+                padding: 1.5rem; 
+                border-radius: 1rem;
+            }
+            .card { padding: 1.25rem; }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-header { display: none; }
+            .desktop-layout { display: flex; }
+            .mobile-layout { display: none; }
+        }
+
+        /* Smooth scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-100);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary-400);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-500);
+        }
+
+        /* Animation for loading states */
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+        
+        .loading-shimmer {
+            background: linear-gradient(90deg, var(--secondary-200) 0px, var(--secondary-100) 40px, var(--secondary-200) 80px);
+            background-size: 200px 100%;
+            animation: shimmer 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // Modern Icon components with better styling
+        const Clock = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12,6 12,12 16,14"></polyline>
+            </svg>
+        );
+
+        const BookOpen = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+        );
+
+        const Award = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <circle cx="12" cy="8" r="7"></circle>
+                <polyline points="8.21,13.89 7,23 12,20 17,23 15.79,13.88"></polyline>
+            </svg>
+        );
+
+        const Plus = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        );
+
+        const Upload = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7,10 12,5 17,10"></polyline>
+                <line x1="12" y1="5" x2="12" y2="15"></line>
+            </svg>
+        );
+
+        const Trash = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <polyline points="3,6 5,6 21,6"></polyline>
+                <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6"></path>
+            </svg>
+        );
+
+        const X = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        );
+
+        const AlertTriangle = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+        );
+
+        const Eye = ({ className = "w-4 h-4" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        );
+
+        const Menu = ({ className = "w-6 h-6" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        );
+
+        const Star = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+        );
+
+        // Sample data
+        const defaultQuestions = [
+            {
+                id: 1,
+                question: "Quy trình đánh giá hiệu quả công việc gồm mấy giai đoạn chính?",
+                options: ["2 giai đoạn", "3 giai đoạn", "4 giai đoạn", "5 giai đoạn"],
+                correctAnswer: "B",
+                topic: "Quy trình đánh giá",
+                isMultiChoice: false
+            },
+            {
+                id: 2,
+                question: "Năng lực cốt lõi tại VietinBank bao gồm những gì? (Chọn nhiều đáp án)",
+                options: ["Hướng đến kết quả", "Hướng đến khách hàng", "Làm việc nhóm", "Chính trực", "Sáng tạo"],
+                correctAnswer: "A,B,C,D",
+                topic: "Năng lực cốt lõi", 
+                isMultiChoice: true
+            },
+            {
+                id: 3,
+                question: "Điểm xếp loại cuối năm được tính theo công thức nào?",
+                options: ["KPI x 70% + Năng lực x 30%", "KPI x 80% + Năng lực x 20%", "KPI x 60% + Năng lực x 40%", "KPI x 90% + Năng lực x 10%"],
+                correctAnswer: "B",
+                topic: "Xếp loại và đánh giá",
+                isMultiChoice: false
+            },
+            {
+                id: 4,
+                question: "Có bao nhiêu mức xếp loại hoàn thành công việc?",
+                options: ["3 mức", "4 mức", "5 mức", "6 mức"],
+                correctAnswer: "C",
+                topic: "Xếp loại và đánh giá",
+                isMultiChoice: false
+            },
+            {
+                id: 5,
+                question: "Giai đoạn lập kế hoạch công việc diễn ra vào thời gian nào?",
+                options: ["Cuối năm", "Đầu năm (Quý I)", "Giữa năm (Quý II-III)", "Cả năm"],
+                correctAnswer: "B",
+                topic: "Quy trình đánh giá",
+                isMultiChoice: false
+            },
+            {
+                id: 6,
+                question: "Các giai đoạn của KPI bao gồm? (Chọn nhiều đáp án)",
+                options: ["Lập kế hoạch", "Triển khai", "Giám sát", "Đánh giá", "Báo cáo"],
+                correctAnswer: "A,B,C,D",
+                topic: "KPI và mục tiêu",
+                isMultiChoice: true
+            }
+        ];
+
+        // Utility functions
+        const parseCorrectAnswers = (answerString) => {
+            if (!answerString) return [];
+            return answerString.toString().replace(/\s/g, '').split(/[,;]/).filter(a => a);
+        };
+
+        const isMultiChoice = (correctAnswer) => {
+            const answers = parseCorrectAnswers(correctAnswer);
+            return answers.length > 1;
+        };
+
+        const checkAnswer = (userAnswer, correctAnswer, isMultiChoiceQuestion) => {
+            if (!isMultiChoiceQuestion) {
+                return userAnswer === correctAnswer;
+            }
+            
+            const userAnswers = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
+            const correctAnswers = parseCorrectAnswers(correctAnswer);
+            
+            if (userAnswers.length !== correctAnswers.length) return false;
+            
+            return correctAnswers.every(answer => userAnswers.includes(answer)) &&
+                   userAnswers.every(answer => correctAnswers.includes(answer));
+        };
+
+        const validatePositiveInteger = (value) => {
+            const num = parseInt(value);
+            return !isNaN(num) && num > 0 && num.toString() === value.toString();
+        };
+
+        const QuizApp = () => {
+            const [currentScreen, setCurrentScreen] = useState('home');
+            const [availableQuestions, setAvailableQuestions] = useState(defaultQuestions);
+            const [questions, setQuestions] = useState([]);
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+            const [answers, setAnswers] = useState({});
+            const [timeLeft, setTimeLeft] = useState(30 * 60);
+            const [quizStarted, setQuizStarted] = useState(false);
+            const [quizHistory, setQuizHistory] = useState([]);
+            const [currentResult, setCurrentResult] = useState(null);
+            const [viewingHistoryItem, setViewingHistoryItem] = useState(null);
+            const [availableTopics, setAvailableTopics] = useState([]);
+            const [sidebarOpen, setSidebarOpen] = useState(false);
+            const [quizConfig, setQuizConfig] = useState({
+                name: 'Bài thi mẫu',
+                questionCount: '5',
+                timeMinutes: '30',
+                selectedTopics: []
+            });
+            const [showCreateQuizModal, setShowCreateQuizModal] = useState(false);
+            const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+            const [showReviewModal, setShowReviewModal] = useState(false);
+            const [uploadProgress, setUploadProgress] = useState(0);
+            const [isUploading, setIsUploading] = useState(false);
+            const fileInputRef = useRef(null);
+
+            // Extract topics from available questions
+            useEffect(() => {
+                const topics = [...new Set(availableQuestions.map(q => q.topic))].sort();
+                setAvailableTopics(topics);
+            }, [availableQuestions]);
+
+            // Load history from localStorage
+            useEffect(() => {
+                const savedHistory = localStorage.getItem('quizHistory');
+                if (savedHistory) {
+                    try {
+                        setQuizHistory(JSON.parse(savedHistory));
+                    } catch (error) {
+                        console.error('Lỗi khi load lịch sử:', error);
+                    }
+                }
+            }, []);
+
+            // Save history to localStorage
+            useEffect(() => {
+                localStorage.setItem('quizHistory', JSON.stringify(quizHistory));
+            }, [quizHistory]);
+
+            // Handle mobile sidebar
+            useEffect(() => {
+                const handleResize = () => {
+                    if (window.innerWidth > 768) {
+                        setSidebarOpen(false);
+                    }
+                };
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            // Read Excel file with progress tracking
+            const readExcelFile = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    
+                    reader.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            const progress = (e.loaded / e.total) * 50;
+                            setUploadProgress(progress);
+                        }
+                    };
+
+                    reader.onload = (e) => {
+                        try {
+                            setUploadProgress(60);
+                            
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            
+                            setUploadProgress(70);
+                            
+                            const sheetName = workbook.SheetNames.find(name => 
+                                name.toLowerCase().includes('data')
+                            ) || workbook.SheetNames[0];
+                            
+                            const worksheet = workbook.Sheets[sheetName];
+                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                            
+                            setUploadProgress(80);
+                            
+                            const rows = jsonData.slice(1);
+                            
+                            const questions = rows
+                                .filter(row => row && row[1])
+                                .map((row, index) => {
+                                    const options = row.slice(2, 9).filter(option => option && option.toString().trim());
+                                    const correctAnswer = row[9]?.toString().trim();
+                                    
+                                    return {
+                                        id: index + 1,
+                                        question: row[1],
+                                        options: options,
+                                        correctAnswer: correctAnswer,
+                                        topic: row[10] || 'Chung',
+                                        isMultiChoice: isMultiChoice(correctAnswer)
+                                    };
+                                })
+                                .filter(question => 
+                                    question.question && 
+                                    question.options.length > 0 && 
+                                    question.correctAnswer
+                                );
+                            
+                            setUploadProgress(100);
+                            
+                            setTimeout(() => {
+                                resolve(questions);
+                            }, 300);
+                            
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = () => reject(new Error('Lỗi khi đọc file'));
+                    reader.readAsArrayBuffer(file);
+                });
+            };
+
+            const handleFileUpload = async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    setIsUploading(true);
+                    setUploadProgress(0);
+                    
+                    try {
+                        const questions = await readExcelFile(file);
+                        if (questions.length > 0) {
+                            setAvailableQuestions(questions);
+                            alert(`Đã tải thành công ${questions.length} câu hỏi từ file Excel!`);
+                        } else {
+                            alert('Không tìm thấy câu hỏi hợp lệ trong file Excel.');
+                        }
+                    } catch (error) {
+                        console.error('Lỗi khi đọc file Excel:', error);
+                        alert('Lỗi khi đọc file Excel. Vui lòng kiểm tra định dạng file.');
+                    } finally {
+                        setIsUploading(false);
+                        setUploadProgress(0);
+                    }
+                }
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            };
+
+            const initializeQuiz = (config = quizConfig) => {
+                // Validate inputs
+                if (!validatePositiveInteger(config.questionCount)) {
+                    alert('Số câu hỏi phải là số nguyên dương!');
+                    return;
+                }
+                if (!validatePositiveInteger(config.timeMinutes)) {
+                    alert('Thời gian phải là số nguyên dương!');
+                    return;
+                }
+
+                const questionCount = parseInt(config.questionCount);
+                const timeMinutes = parseInt(config.timeMinutes);
+
+                // Filter questions by selected topics
+                let filteredQuestions = availableQuestions;
+                if (config.selectedTopics.length > 0) {
+                    filteredQuestions = availableQuestions.filter(q => 
+                        config.selectedTopics.includes(q.topic)
+                    );
+                }
+
+                if (filteredQuestions.length === 0) {
+                    alert('Không có câu hỏi nào trong các chủ đề đã chọn!');
+                    return;
+                }
+
+                if (filteredQuestions.length < questionCount) {
+                    alert(`Chỉ có ${filteredQuestions.length} câu hỏi trong các chủ đề đã chọn. Vui lòng giảm số câu hỏi hoặc chọn thêm chủ đề.`);
+                    return;
+                }
+
+                // Group questions by topic
+                const questionsByTopic = filteredQuestions.reduce((acc, question) => {
+                    if (!acc[question.topic]) {
+                        acc[question.topic] = [];
+                    }
+                    acc[question.topic].push(question);
+                    return acc;
+                }, {});
+
+                const selectedQuestions = [];
+                const topics = Object.keys(questionsByTopic);
+                
+                // Distribute questions evenly across topics
+                const questionsPerTopic = Math.ceil(questionCount / topics.length);
+                
+                topics.forEach(topic => {
+                    const topicQuestions = questionsByTopic[topic];
+                    const shuffled = [...topicQuestions].sort(() => Math.random() - 0.5);
+                    selectedQuestions.push(...shuffled.slice(0, Math.min(questionsPerTopic, topicQuestions.length)));
+                });
+
+                // Shuffle again and limit number of questions
+                const finalQuestions = selectedQuestions
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, questionCount)
+                    .map((q, index) => ({ ...q, id: index + 1 }));
+
+                setQuestions(finalQuestions);
+                setAnswers({});
+                setCurrentQuestionIndex(0);
+                setTimeLeft(timeMinutes * 60);
+                setQuizStarted(true);
+                setCurrentScreen('quiz');
+                setShowCreateQuizModal(false);
+                setSidebarOpen(false);
+            };
+
+            const cancelQuiz = () => {
+                setQuizStarted(false);
+                setQuestions([]);
+                setAnswers({});
+                setCurrentQuestionIndex(0);
+                setCurrentScreen('home');
+                setShowCancelConfirm(false);
+            };
+
+            useEffect(() => {
+                let timer;
+                if (quizStarted && timeLeft > 0 && currentScreen === 'quiz') {
+                    timer = setInterval(() => {
+                        setTimeLeft(prev => {
+                            if (prev <= 1) {
+                                submitQuiz();
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                }
+                return () => clearInterval(timer);
+            }, [quizStarted, timeLeft, currentScreen]);
+
+            const formatTime = (seconds) => {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            };
+
+            const handleAnswerSelect = (questionId, selectedOption) => {
+                const question = questions.find(q => q.id === questionId);
+                
+                if (question.isMultiChoice) {
+                    setAnswers(prev => {
+                        const currentAnswers = prev[questionId] || [];
+                        const newAnswers = currentAnswers.includes(selectedOption)
+                            ? currentAnswers.filter(a => a !== selectedOption)
+                            : [...currentAnswers, selectedOption];
+                        
+                        return {
+                            ...prev,
+                            [questionId]: newAnswers
+                        };
+                    });
+                } else {
+                    setAnswers(prev => ({
+                        ...prev,
+                        [questionId]: selectedOption
+                    }));
+                }
+            };
+
+            const submitQuiz = () => {
+                const totalQuestions = questions.length;
+                let correctAnswers = 0;
+
+                const detailedAnswers = questions.map(question => {
+                    const userAnswer = answers[question.id];
+                    const isCorrect = checkAnswer(userAnswer, question.correctAnswer, question.isMultiChoice);
+                    
+                    if (isCorrect) correctAnswers++;
+                    
+                    return {
+                        question: question.question,
+                        options: question.options,
+                        correctAnswer: question.correctAnswer,
+                        userAnswer: userAnswer,
+                        isCorrect: isCorrect,
+                        isMultiChoice: question.isMultiChoice,
+                        topic: question.topic
+                    };
+                });
+
+                const score = correctAnswers * 2;
+                const maxScore = totalQuestions * 2;
+                const percentage = (correctAnswers / totalQuestions) * 100;
+                const passed = percentage > 75;
+
+                const result = {
+                    id: Date.now(),
+                    quizName: quizConfig.name,
+                    date: new Date().toLocaleString('vi-VN'),
+                    totalQuestions,
+                    correctAnswers,
+                    score,
+                    maxScore,
+                    percentage: percentage.toFixed(1),
+                    passed,
+                    timeUsed: parseInt(quizConfig.timeMinutes) * 60 - timeLeft,
+                    totalTime: parseInt(quizConfig.timeMinutes) * 60,
+                    detailedAnswers: detailedAnswers,
+                    selectedTopics: quizConfig.selectedTopics
+                };
+
+                setCurrentResult(result);
+                setQuizHistory(prev => [result, ...prev]);
+                setQuizStarted(false);
+                setCurrentScreen('result');
+            };
+
+            const retakeQuiz = () => {
+                setCurrentResult(null);
+                initializeQuiz();
+            };
+
+            const deleteQuizHistory = (id) => {
+                if (confirm('Bạn có chắc muốn xóa kết quả thi này?')) {
+                    setQuizHistory(prev => prev.filter(item => item.id !== id));
+                }
+            };
+
+            const clearAllHistory = () => {
+                if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử thi?')) {
+                    setQuizHistory([]);
+                }
+            };
+
+            const viewHistoryItem = (historyItem) => {
+                setViewingHistoryItem(historyItem);
+                setShowReviewModal(true);
+            };
+
+            // Review Modal Component
+            const ReviewModal = () => {
+                const reviewData = showReviewModal ? (currentResult || viewingHistoryItem) : null;
+                
+                if (!showReviewModal || !reviewData) return null;
+
+                return (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-gray-800">Chi tiết bài thi: {reviewData.quizName}</h2>
+                                <button
+                                    onClick={() => {
+                                        setShowReviewModal(false);
+                                        setViewingHistoryItem(null);
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <X />
+                                </button>
+                            </div>
+
+                            <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div className="text-gray-600">Ngày thi: <span className="font-medium text-gray-800">{reviewData.date}</span></div>
+                                    <div className="text-gray-600">Kết quả: 
+                                        <span className={`font-semibold ml-1 ${reviewData.passed ? 'text-green-600' : 'text-red-600'}`}>
+                                            {reviewData.passed ? 'ĐỖ' : 'TRƯỢT'}
+                                        </span>
+                                    </div>
+                                    <div className="text-gray-600">Điểm: <span className="font-medium text-gray-800">{reviewData.score}/{reviewData.maxScore}</span></div>
+                                    <div className="text-gray-600">Tỷ lệ đúng: <span className="font-medium text-gray-800">{reviewData.percentage}%</span></div>
+                                    {reviewData.selectedTopics && reviewData.selectedTopics.length > 0 && (
+                                        <div className="md:col-span-2 text-gray-600">
+                                            Chủ đề: <span className="font-medium text-gray-800">{reviewData.selectedTopics.join(', ')}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="space-y-6 max-h-96 overflow-y-auto">
+                                {reviewData.detailedAnswers.map((item, index) => (
+                                    <div key={index} className="border border-gray-200 rounded-xl p-4 bg-white">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <h3 className="font-semibold text-gray-800 text-base pr-4">Câu {index + 1}: {item.question}</h3>
+                                            <span className={`status-badge flex-shrink-0 ${item.isCorrect ? 'pass' : 'fail'}`}>
+                                                {item.isCorrect ? 'Đúng' : 'Sai'}
+                                            </span>
+                                        </div>
+                                        
+                                        {item.isMultiChoice && (
+                                            <div className="text-sm text-orange-600 mb-3 bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
+                                                ⚡ Câu hỏi nhiều lựa chọn
+                                            </div>
+                                        )}
+                                        
+                                        <div className="space-y-2 text-sm">
+                                            {item.options.map((option, optionIndex) => {
+                                                const optionLetter = String.fromCharCode(65 + optionIndex);
+                                                const correctAnswers = parseCorrectAnswers(item.correctAnswer);
+                                                const userAnswers = Array.isArray(item.userAnswer) ? item.userAnswer : (item.userAnswer ? [item.userAnswer] : []);
+                                                
+                                                const isCorrect = correctAnswers.includes(optionLetter);
+                                                const isSelected = userAnswers.includes(optionLetter);
+                                                
+                                                let textColor = 'text-gray-600';
+                                                let bgColor = '';
+                                                let icon = '';
+                                                
+                                                if (isSelected && isCorrect) {
+                                                    textColor = 'text-green-700';
+                                                    bgColor = 'bg-green-50 border-green-200';
+                                                    icon = ' ✓';
+                                                } else if (isSelected && !isCorrect) {
+                                                    textColor = 'text-red-700';
+                                                    bgColor = 'bg-red-50 border-red-200';
+                                                    icon = ' ✗';
+                                                } else if (!isSelected && isCorrect) {
+                                                    textColor = 'text-green-600';
+                                                    bgColor = 'bg-green-25 border-green-100';
+                                                    icon = ' (Đáp án đúng)';
+                                                }
+                                                
+                                                return (
+                                                    <div key={optionIndex} className={`p-3 rounded-lg border ${bgColor || 'border-gray-100'} ${textColor} font-medium`}>
+                                                        {optionLetter}. {option}{icon}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="mt-6 flex justify-end">
+                                <button
+                                    onClick={() => {
+                                        setShowReviewModal(false);
+                                        setViewingHistoryItem(null);
+                                    }}
+                                    className="btn-secondary"
+                                >
+                                    Đóng
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Create Quiz Modal
+            const CreateQuizModal = () => {
+                const [tempConfig, setTempConfig] = useState(quizConfig);
+
+                const handleConfigChange = useCallback((field, value) => {
+                    setTempConfig(prev => ({
+                        ...prev,
+                        [field]: value
+                    }));
+                }, []);
+
+                const handleTopicToggle = useCallback((topic) => {
+                    setTempConfig(prev => ({
+                        ...prev,
+                        selectedTopics: prev.selectedTopics.includes(topic)
+                            ? prev.selectedTopics.filter(t => t !== topic)
+                            : [...prev.selectedTopics, topic]
+                    }));
+                }, []);
+
+                const selectAllTopics = () => {
+                    setTempConfig(prev => ({
+                        ...prev,
+                        selectedTopics: [...availableTopics]
+                    }));
+                };
+
+                const clearAllTopics = () => {
+                    setTempConfig(prev => ({
+                        ...prev,
+                        selectedTopics: []
+                    }));
+                };
+
+                const handleSubmit = () => {
+                    if (!validatePositiveInteger(tempConfig.questionCount)) {
+                        alert('Số câu hỏi phải là số nguyên dương!');
+                        return;
+                    }
+                    if (!validatePositiveInteger(tempConfig.timeMinutes)) {
+                        alert('Thời gian phải là số nguyên dương!');
+                        return;
+                    }
+                    if (!tempConfig.name.trim()) {
+                        alert('Vui lòng nhập tên bài thi!');
+                        return;
+                    }
+                    
+                    setQuizConfig(tempConfig);
+                    initializeQuiz(tempConfig);
+                };
+
+                if (!showCreateQuizModal) return null;
+
+                return (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-gray-800">Tạo Bài Thi Mới</h2>
+                                <button
+                                    onClick={() => setShowCreateQuizModal(false)}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <X />
+                                </button>
+                            </div>
+
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Tên bài thi:
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={tempConfig.name}
+                                        onChange={(e) => handleConfigChange('name', e.target.value)}
+                                        className="input-field"
+                                        placeholder="Nhập tên bài thi..."
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Chọn chủ đề: (để trống = ngẫu nhiên)
+                                    </label>
+                                    <div className="topic-select">
+                                        <div className="flex gap-2 mb-3">
+                                            <button
+                                                type="button"
+                                                onClick={selectAllTopics}
+                                                className="text-xs px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
+                                            >
+                                                Chọn tất cả
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={clearAllTopics}
+                                                className="text-xs px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                                            >
+                                                Bỏ chọn
+                                            </button>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {availableTopics.map(topic => (
+                                                <label key={topic} className="flex items-center cursor-pointer group">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={tempConfig.selectedTopics.includes(topic)}
+                                                        onChange={() => handleTopicToggle(topic)}
+                                                        className="checkbox-custom mr-3"
+                                                    />
+                                                    <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">{topic}</span>
+                                                    <span className="text-xs text-gray-500 ml-2">
+                                                        ({availableQuestions.filter(q => q.topic === topic).length} câu)
+                                                    </span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {tempConfig.selectedTopics.length > 0 && (
+                                        <div className="text-xs text-blue-600 mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                                            📋 Đã chọn: {tempConfig.selectedTopics.join(', ')}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            Số câu hỏi:
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={tempConfig.questionCount}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                if (value === '' || /^\d+$/.test(value)) {
+                                                    handleConfigChange('questionCount', value);
+                                                }
+                                            }}
+                                            className="input-field"
+                                            placeholder="Nhập số nguyên dương"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            Thời gian (phút):
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={tempConfig.timeMinutes}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                if (value === '' || /^\d+$/.test(value)) {
+                                                    handleConfigChange('timeMinutes', value);
+                                                }
+                                            }}
+                                            className="input-field"
+                                            placeholder="Nhập số nguyên dương"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border border-blue-200">
+                                    <h4 className="font-semibold text-sm mb-3 text-gray-800 flex items-center">
+                                        <Star className="w-4 h-4 text-yellow-500 mr-1" />
+                                        Thông tin bài thi:
+                                    </h4>
+                                    <div className="text-sm text-gray-700 space-y-2">
+                                        <div className="flex justify-between">
+                                            <span>📊 Tổng điểm:</span>
+                                            <span className="font-semibold">{validatePositiveInteger(tempConfig.questionCount) ? parseInt(tempConfig.questionCount) * 2 : '?'} điểm</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>🎯 Điểm đỗ:</span>
+                                            <span className="font-semibold text-green-600">>{validatePositiveInteger(tempConfig.questionCount) ? Math.ceil(parseInt(tempConfig.questionCount) * 0.75 * 2) : '?'} điểm (>75%)</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>⏱️ Thời gian:</span>
+                                            <span className="font-semibold">{validatePositiveInteger(tempConfig.timeMinutes) ? tempConfig.timeMinutes : '?'} phút</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>📚 Câu hỏi có sẵn:</span>
+                                            <span className="font-semibold text-blue-600">{tempConfig.selectedTopics.length > 0 
+                                                ? availableQuestions.filter(q => tempConfig.selectedTopics.includes(q.topic)).length
+                                                : availableQuestions.length} câu</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3 pt-2">
+                                    <button
+                                        onClick={() => setShowCreateQuizModal(false)}
+                                        className="btn-secondary flex-1"
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button
+                                        onClick={handleSubmit}
+                                        className="btn-primary flex-1"
+                                    >
+                                        <Star className="w-4 h-4" />
+                                        Bắt đầu thi
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Cancel Confirm Modal
+            const CancelConfirmModal = () => {
+                if (!showCancelConfirm) return null;
+
+                return (
+                    <div className="modal-overlay">
+                        <div className="modal-content max-w-md">
+                            <div className="text-center">
+                                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <AlertTriangle className="w-8 h-8 text-red-600" />
+                                </div>
+                                <h2 className="text-xl font-bold mb-2 text-gray-800">Xác nhận hủy bài thi</h2>
+                                <p className="text-gray-600 mb-6 text-sm">
+                                    Bạn có chắc muốn hủy bài thi hiện tại? 
+                                    <br />
+                                    Tất cả dữ liệu đã nhập sẽ bị mất.
+                                </p>
+                                
+                                <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
+                                    <button
+                                        onClick={() => setShowCancelConfirm(false)}
+                                        className="btn-secondary flex-1"
+                                    >
+                                        Tiếp tục thi
+                                    </button>
+                                    <button
+                                        onClick={cancelQuiz}
+                                        className="btn-error flex-1"
+                                    >
+                                        Hủy bài thi
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Mobile Header component
+            const MobileHeader = () => (
+                <div className="mobile-header md:hidden">
+                    <div className="flex items-center justify-between">
+                        <button
+                            onClick={() => setSidebarOpen(true)}
+                            className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <Menu />
+                        </button>
+                        <h1 className="text-lg font-bold text-gray-800">Thi Trắc Nghiệm</h1>
+                        <div className="w-10"></div>
+                    </div>
+                </div>
+            );
+
+            // Sidebar component
+            const Sidebar = () => (
+                <>
+                    {sidebarOpen && (
+                        <div 
+                            className="mobile-menu-overlay md:hidden"
+                            onClick={() => setSidebarOpen(false)}
+                        ></div>
+                    )}
+                    <div className={`sidebar p-6 ${sidebarOpen ? 'open' : ''}`}>
+                        <div className="mb-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-xl font-bold text-gray-800 mb-1">Thi Trắc Nghiệm</h1>
+                                    <p className="text-sm text-gray-600">Hệ thống thi trắc nghiệm hiện đại</p>
+                                </div>
+                                <button
+                                    onClick={() => setSidebarOpen(false)}
+                                    className="md:hidden text-gray-400 hover:text-gray-600 p-1 rounded transition-colors"
+                                >
+                                    <X />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Upload Excel */}
+                        <div className="mb-6">
+                            <h3 className="font-semibold mb-3 flex items-center text-gray-800">
+                                <Upload className="mr-2 text-blue-600" />
+                                Upload Câu Hỏi
+                            </h3>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".xlsx,.xls"
+                                onChange={handleFileUpload}
+                                disabled={isUploading || quizStarted}
+                                className="w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:transition-colors disabled:opacity-50"
+                            />
+                            
+                            {isUploading && (
+                                <div className="mt-3">
+                                    <div className="flex justify-between text-xs text-gray-600 mb-2">
+                                        <span>Đang tải lên...</span>
+                                        <span className="font-semibold">{Math.round(uploadProgress)}%</span>
+                                    </div>
+                                    <div className="progress-bar">
+                                        <div 
+                                            className="progress-fill" 
+                                            style={{ width: `${uploadProgress}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <p className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded-lg">
+                                📊 Hiện có: <span className="font-semibold text-blue-600">{availableQuestions.length}</span> câu hỏi ({availableTopics.length} chủ đề)
+                            </p>
+                        </div>
+
+                        {/* Create new quiz */}
+                        <div className="mb-6">
+                            <button
+                                onClick={() => setShowCreateQuizModal(true)}
+                                disabled={quizStarted || isUploading}
+                                className="btn-primary w-full"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Tạo Bài Thi Mới
+                            </button>
+                            
+                            {quizStarted && (
+                                <button
+                                    onClick={() => setShowCancelConfirm(true)}
+                                    className="btn-error w-full mt-3"
+                                >
+                                    <X className="w-4 h-4" />
+                                    Hủy Phiên Thi
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Quiz history */}
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold flex items-center text-gray-800">
+                                    <BookOpen className="mr-2 text-purple-600" />
+                                    Lịch Sử Thi ({quizHistory.length})
+                                </h3>
+                                {quizHistory.length > 0 && (
+                                    <button
+                                        onClick={clearAllHistory}
+                                        className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
+                                        title="Xóa tất cả lịch sử"
+                                    >
+                                        Xóa tất cả
+                                    </button>
+                                )}
+                            </div>
+                            <div className="sidebar-scrollable">
+                                {quizHistory.length === 0 ? (
+                                    <div className="text-center text-gray-500 text-sm py-6">
+                                        <BookOpen className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                                        Chưa có lịch sử thi nào
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {quizHistory.map(result => (
+                                            <div key={result.id} className="history-item">
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <div className="flex-1">
+                                                        <div className="font-semibold text-sm text-gray-800">{result.quizName}</div>
+                                                        <div className="text-xs text-gray-500">{result.date}</div>
+                                                        {result.selectedTopics && result.selectedTopics.length > 0 && (
+                                                            <div className="text-xs text-gray-400 mt-1">
+                                                                {result.selectedTopics.slice(0, 2).join(', ')}
+                                                                {result.selectedTopics.length > 2 && '...'}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex space-x-2 ml-2">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                viewHistoryItem(result);
+                                                            }}
+                                                            className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-50 rounded transition-colors"
+                                                            title="Xem chi tiết"
+                                                        >
+                                                            <Eye />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteQuizHistory(result.id);
+                                                            }}
+                                                            className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded transition-colors"
+                                                            title="Xóa"
+                                                        >
+                                                            <Trash />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className={`status-badge ${result.passed ? 'pass' : 'fail'}`}>
+                                                        {result.passed ? 'ĐỖ' : 'TRƯỢT'}
+                                                    </span>
+                                                    <span className="text-xs text-gray-600 font-medium">
+                                                        {result.score}/{result.maxScore} ({result.percentage}%)
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </>
+            );
+
+            // Main content area
+            const MainContent = () => {
+                if (currentScreen === 'home') {
+                    return (
+                        <div className="text-center max-w-4xl mx-auto">
+                            <div className="gradient-hero text-white p-8 rounded-2xl mb-8 card-shadow-lg">
+                                <div className="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <BookOpen className="w-8 h-8 text-white" />
+                                </div>
+                                <h1 className="text-3xl md:text-4xl font-bold mb-3">Thi Trắc Nghiệm Online</h1>
+                                <p className="text-blue-100 text-lg">Quy trình Đánh giá Mức độ Hoàn thành Công việc</p>
+                            </div>
+
+                            <div className="card card-shadow mb-8">
+                                <h2 className="text-2xl font-bold mb-6 text-gray-800">Hướng dẫn sử dụng</h2>
+                                <div className="text-left space-y-6">
+                                    {[
+                                        {
+                                            step: 1,
+                                            title: "Upload file Excel",
+                                            description: "Tải lên file Excel chứa câu hỏi (tùy chọn). Hỗ trợ câu hỏi single choice và multi choice.",
+                                            icon: <Upload className="w-5 h-5 text-blue-600" />
+                                        },
+                                        {
+                                            step: 2,
+                                            title: "Chọn chủ đề và cấu hình",
+                                            description: "Chọn chủ đề câu hỏi, số câu hỏi, thời gian và tên bài thi",
+                                            icon: <BookOpen className="w-5 h-5 text-purple-600" />
+                                        },
+                                        {
+                                            step: 3,
+                                            title: "Làm bài thi",
+                                            description: "Hoàn thành bài thi trong thời gian quy định. Chú ý câu hỏi nhiều lựa chọn.",
+                                            icon: <Clock className="w-5 h-5 text-green-600" />
+                                        },
+                                        {
+                                            step: 4,
+                                            title: "Xem kết quả và review",
+                                            description: "Xem điểm số, lịch sử các lần thi và review chi tiết câu trả lời",
+                                            icon: <Award className="w-5 h-5 text-yellow-600" />
+                                        }
+                                    ].map((item, index) => (
+                                        <div key={index} className="flex items-start group">
+                                            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl flex items-center justify-center text-sm font-bold mr-4 group-hover:scale-105 transition-transform">
+                                                {item.step}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center mb-1">
+                                                    {item.icon}
+                                                    <div className="font-semibold text-gray-800 ml-2">{item.title}</div>
+                                                </div>
+                                                <div className="text-sm text-gray-600">{item.description}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="card card-shadow">
+                                <h2 className="text-2xl font-bold mb-6 text-gray-800">Thông tin bài thi mẫu</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-8">
+                                    {[
+                                        {
+                                            icon: <Clock className="text-blue-600" />,
+                                            label: "Thời gian",
+                                            value: `${quizConfig.timeMinutes} phút`,
+                                            color: "text-blue-600"
+                                        },
+                                        {
+                                            icon: <BookOpen className="text-green-600" />,
+                                            label: "Số câu hỏi",
+                                            value: `${quizConfig.questionCount} câu`,
+                                            color: "text-green-600"
+                                        },
+                                        {
+                                            icon: <Award className="text-yellow-600" />,
+                                            label: "Điểm đỗ",
+                                            value: `>75% (${Math.ceil(parseInt(quizConfig.questionCount) * 0.75 * 2)} điểm)`,
+                                            color: "text-yellow-600"
+                                        },
+                                        {
+                                            icon: <Star className="text-purple-600" />,
+                                            label: "Câu hỏi có sẵn",
+                                            value: `${availableQuestions.length} câu`,
+                                            color: "text-purple-600"
+                                        }
+                                    ].map((item, index) => (
+                                        <div key={index} className="flex items-center p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+                                            <div className="mr-3">
+                                                {item.icon}
+                                            </div>
+                                            <div>
+                                                <div className="text-sm text-gray-600">{item.label}</div>
+                                                <div className={`font-semibold ${item.color}`}>{item.value}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                <button
+                                    onClick={() => initializeQuiz()}
+                                    disabled={availableQuestions.length === 0}
+                                    className="btn-primary w-full text-lg py-4"
+                                >
+                                    <Star className="w-5 h-5" />
+                                    Bắt đầu thi nhanh
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (currentScreen === 'quiz') {
+                    const currentQuestion = questions[currentQuestionIndex];
+                    
+                    return (
+                        <div className="max-w-4xl mx-auto">
+                            {/* Header with timer */}
+                            <div className="card card-shadow mb-6 p-6">
+                                <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+                                    <div className="flex flex-col md:flex-row md:items-center md:space-x-6 mb-4 md:mb-0">
+                                        <span className="font-bold text-lg text-gray-800">Câu {currentQuestionIndex + 1}/{questions.length}</span>
+                                        <span className="text-gray-600 text-sm bg-gray-100 px-3 py-1 rounded-lg mt-2 md:mt-0">{currentQuestion.topic}</span>
+                                        <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mt-2 md:mt-0 font-medium">{quizConfig.name}</span>
+                                        {currentQuestion.isMultiChoice && (
+                                            <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-lg mt-2 md:mt-0 font-medium">Nhiều lựa chọn</span>
+                                        )}
+                                    </div>
+                                    <div className={`flex items-center space-x-3 timer ${timeLeft < 300 ? 'text-red-600 warning' : 'text-green-600'} self-end md:self-auto`}>
+                                        <Clock className="w-5 h-5" />
+                                        <span className="text-xl font-bold">{formatTime(timeLeft)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Question */}
+                            <div className="card card-shadow mb-6">
+                                <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-800">{currentQuestion.question}</h2>
+                                
+                                {currentQuestion.isMultiChoice && (
+                                    <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                                        <div className="text-sm text-orange-700 flex items-center">
+                                            <span className="text-lg mr-2">⚡</span>
+                                            <strong>Lưu ý:</strong> Đây là câu hỏi nhiều lựa chọn. Bạn có thể chọn nhiều đáp án.
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                <div className="space-y-4">
+                                    {currentQuestion.options.map((option, index) => {
+                                        const optionLetter = String.fromCharCode(65 + index);
+                                        let isSelected = false;
+                                        
+                                        if (currentQuestion.isMultiChoice) {
+                                            const selectedAnswers = answers[currentQuestion.id] || [];
+                                            isSelected = selectedAnswers.includes(optionLetter);
+                                        } else {
+                                            isSelected = answers[currentQuestion.id] === optionLetter;
+                                        }
+                                        
+                                        return (
+                                            <label
+                                                key={index}
+                                                className={`question-option ${isSelected ? 'selected' : ''}`}
+                                            >
+                                                <input
+                                                    type={currentQuestion.isMultiChoice ? "checkbox" : "radio"}
+                                                    name={currentQuestion.isMultiChoice ? undefined : `question-${currentQuestion.id}`}
+                                                    value={optionLetter}
+                                                    checked={isSelected}
+                                                    onChange={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
+                                                    className={currentQuestion.isMultiChoice ? "checkbox-custom" : "radio-custom"}
+                                                />
+                                                <div>
+                                                    <span className="font-bold text-gray-700 mr-3">{optionLetter}.</span>
+                                                    <span className="text-gray-800">{option}</span>
+                                                </div>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Navigation */}
+                            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 space-y-4 md:space-y-0">
+                                <button
+                                    onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
+                                    disabled={currentQuestionIndex === 0}
+                                    className="btn-secondary order-1 md:order-none"
+                                >
+                                    ← Câu trước
+                                </button>
+
+                                <button
+                                    onClick={submitQuiz}
+                                    className="btn-error order-3 md:order-none px-8"
+                                >
+                                    Nộp bài thi
+                                </button>
+
+                                <button
+                                    onClick={() => setCurrentQuestionIndex(Math.min(questions.length - 1, currentQuestionIndex + 1))}
+                                    disabled={currentQuestionIndex === questions.length - 1}
+                                    className="btn-secondary order-2 md:order-none"
+                                >
+                                    Câu sau →
+                                </button>
+                            </div>
+
+                            {/* Question Navigation */}
+                            <div className="card card-shadow">
+                                <h3 className="font-bold mb-4 text-gray-800">Danh sách câu hỏi</h3>
+                                <div className="grid grid-cols-5 md:grid-cols-10 gap-3">
+                                    {questions.map((_, index) => {
+                                        const question = questions[index];
+                                        const isAnswered = answers[question.id];
+                                        const isCurrent = index === currentQuestionIndex;
+                                        
+                                        let buttonClass = 'question-nav-btn ';
+                                        if (isCurrent) {
+                                            buttonClass += 'current';
+                                        } else if (isAnswered) {
+                                            buttonClass += 'answered';
+                                        } else {
+                                            buttonClass += 'unanswered';
+                                        }
+                                        
+                                        return (
+                                            <button
+                                                key={index}
+                                                onClick={() => setCurrentQuestionIndex(index)}
+                                                className={buttonClass}
+                                            >
+                                                {index + 1}
+                                                {question.isMultiChoice && (
+                                                    <div className="multi-choice-indicator"></div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <div className="mt-4 text-xs text-gray-500 flex items-center">
+                                    <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
+                                    Câu hỏi nhiều lựa chọn
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (currentScreen === 'result') {
+                    return (
+                        <div className="text-center max-w-4xl mx-auto">
+                            <div className={`p-8 rounded-2xl mb-8 card-shadow-lg ${currentResult.passed ? 'gradient-success' : 'gradient-error'} text-white`}>
+                                <div className="w-20 h-20 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <Award className="w-10 h-10" />
+                                </div>
+                                <h2 className="text-3xl md:text-4xl font-bold mb-3">
+                                    {currentResult.passed ? 'ĐỖ' : 'TRƯỢT'}
+                                </h2>
+                                <h3 className="text-xl font-semibold mb-2">{currentResult.quizName}</h3>
+                                <p className="text-lg opacity-90">
+                                    Điểm: {currentResult.score}/{currentResult.maxScore} ({currentResult.percentage}%)
+                                </p>
+                                {currentResult.selectedTopics && currentResult.selectedTopics.length > 0 && (
+                                    <p className="text-sm opacity-75 mt-2">
+                                        Chủ đề: {currentResult.selectedTopics.join(', ')}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="card card-shadow mb-8">
+                                <h3 className="text-2xl font-bold mb-6 text-gray-800">Chi tiết kết quả</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {[
+                                        { label: "Tổng số câu", value: currentResult.totalQuestions, icon: <BookOpen className="w-5 h-5 text-blue-600" /> },
+                                        { label: "Trả lời đúng", value: currentResult.correctAnswers, icon: <Award className="w-5 h-5 text-green-600" /> },
+                                        { label: "Tỷ lệ đúng", value: `${currentResult.percentage}%`, icon: <Star className="w-5 h-5 text-yellow-600" /> },
+                                        { label: "Điểm số", value: `${currentResult.score}/${currentResult.maxScore}`, icon: <Star className="w-5 h-5 text-purple-600" /> },
+                                        { label: "Thời gian làm bài", value: formatTime(currentResult.timeUsed), icon: <Clock className="w-5 h-5 text-orange-600" /> },
+                                        { label: "Thời gian cho phép", value: formatTime(currentResult.totalTime), icon: <Clock className="w-5 h-5 text-gray-600" /> }
+                                    ].map((item, index) => (
+                                        <div key={index} className="flex items-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                            <div className="mr-3">
+                                                {item.icon}
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="text-sm text-gray-600">{item.label}</div>
+                                                <div className="font-bold text-gray-800">{item.value}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <button
+                                    onClick={() => setShowReviewModal(true)}
+                                    className="btn-purple"
+                                >
+                                    Xem chi tiết
+                                </button>
+                                
+                                <button
+                                    onClick={retakeQuiz}
+                                    className="btn-primary"
+                                >
+                                    Thi lại
+                                </button>
+                                
+                                <button
+                                    onClick={() => setCurrentScreen('home')}
+                                    className="btn-secondary"
+                                >
+                                    Trang chủ
+                                </button>
+                                
+                                <button
+                                    onClick={() => setShowCreateQuizModal(true)}
+                                    className="btn-success"
+                                >
+                                    Thi mới
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return null;
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+                    <MobileHeader />
+                    
+                    <div className="desktop-layout">
+                        <Sidebar />
+                        <div className="flex-1 p-6 main-content">
+                            <MainContent />
+                            
+                            {/* Footer */}
+                            <footer className="mt-12 pt-8 border-t border-gray-200">
+                                <div className="text-center text-sm text-gray-600">
+                                    <p className="mb-2 font-medium">
+                                        © 2025 Hệ thống Thi Trắc Nghiệm Online. Phát triển bởi <strong className="text-blue-600">ChuBi Assistant</strong>
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        Hỗ trợ câu hỏi single choice & multi choice | Tự động lưu lịch sử | Mobile friendly
+                                    </p>
+                                </div>
+                            </footer>
+                        </div>
+                    </div>
+                    
+                    <div className="mobile-layout">
+                        <Sidebar />
+                        <div className="p-4">
+                            <MainContent />
+                            
+                            {/* Footer mobile */}
+                            <footer className="mt-8 pt-6 border-t border-gray-200">
+                                <div className="text-center text-xs text-gray-600">
+                                    <p className="mb-2 font-medium">
+                                        © 2025 Hệ thống Thi Trắc Nghiệm Online
+                                    </p>
+                                    <p className="text-gray-500">
+                                        Phát triển bởi <strong className="text-blue-600">ChuBi Assistant</strong>
+                                    </p>
+                                </div>
+                            </footer>
+                        </div>
+                    </div>
+                    
+                    {/* Modals */}
+                    <CreateQuizModal />
+                    <CancelConfirmModal />
+                    <ReviewModal />
+                </div>
+            );
+        };
+
+        ReactDOM.render(<QuizApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
