@@ -849,6 +849,25 @@
             }
         ];
 
+        // Motivational quotes about learning
+        const learningQuotes = [
+            { text: "Học tập không phải để cạnh tranh với người khác, mà để trở thành phiên bản tốt nhất của chính mình", author: "Dalai Lama" },
+            { text: "Tri thức là sức mạnh duy nhất không ai có thể cướp đi", author: "Benjamin Franklin" },
+            { text: "Học một cách chăm chỉ để có thể ngồi ở bàn đàm phán, chứ không phải đứng ở bàn phục vụ", author: "Barack Obama" },
+            { text: "Giáo dục là vũ khí mạnh nhất để thay đổi thế giới", author: "Nelson Mandela" },
+            { text: "Đầu tư vào tri thức luôn mang lại lợi nhuận tốt nhất", author: "Benjamin Franklin" },
+            { text: "Học thì khó, dạy thì khó hơn, nhưng khó nhất là học cách học", author: "Confucius" },
+            { text: "Sống mà không học tập thì cũng như chết", author: "Leonardo da Vinci" },
+            { text: "Tôi luôn học hỏi. Bụi đất của ngôi mộ sẽ không thể chôn vùi được khao khát học hỏi của tôi", author: "Mahatma Gandhi" },
+            { text: "Học hỏi là kho báu sẽ theo chủ nhân đi khắp nơi", author: "Chinese Proverb" },
+            { text: "Không có con đường nào dẫn đến thành công mà không có sự chăm chỉ học tập", author: "Henry Ward Beecher" },
+            { text: "Tri thức mà không thực hành thì vô dụng, thực hành mà không có tri thức thì nguy hiểm", author: "Confucius" },
+            { text: "Mục tiêu của việc học không phải để biết nhiều mà để hiểu sâu", author: "Aristotle" },
+            { text: "Học từ hôm qua, sống cho hôm nay, hy vọng cho ngày mai", author: "Albert Einstein" },
+            { text: "Tôi chưa bao giờ gặp một người tôi không thể học được điều gì đó từ họ", author: "Benjamin Franklin" },
+            { text: "Giáo dục thực sự bắt đầu khi ta rời khỏi trường học", author: "Winston Churchill" }
+        ];
+
         // Data storage utilities with enhanced functionality
         const DataStorage = {
             // Quiz history methods
@@ -1021,6 +1040,67 @@
                     .filter(item => item.count > 2)
                     .sort((a, b) => b.count - a.count)
                     .slice(0, 5);
+            }
+        };
+
+        // Quote utilities for motivational messages
+        const QuoteUtils = {
+            getSessionQuote: () => {
+                try {
+                    const now = Date.now();
+                    const sessionTimeout = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+                    const savedTimestamp = localStorage.getItem('current_session_timestamp');
+                    const savedQuote = localStorage.getItem('current_session_quote');
+
+                    // Check if this is a new session based on time elapsed
+                    const isNewSession = !savedTimestamp || !savedQuote ||
+                                       (now - parseInt(savedTimestamp)) > sessionTimeout;
+
+                    if (isNewSession) {
+                        // New session - generate new random quote
+                        const randomIndex = Math.floor(Math.random() * learningQuotes.length);
+                        const selectedQuote = learningQuotes[randomIndex];
+
+                        localStorage.setItem('current_session_timestamp', now.toString());
+                        localStorage.setItem('current_session_quote', JSON.stringify(selectedQuote));
+
+                        console.log('New quote selected:', selectedQuote.text.substring(0, 50) + '...');
+                        return selectedQuote;
+                    } else {
+                        // Same session - return saved quote but update timestamp
+                        localStorage.setItem('current_session_timestamp', now.toString());
+                        return JSON.parse(savedQuote);
+                    }
+                } catch (error) {
+                    console.error('Error handling session quote:', error);
+                    // Fallback to random quote
+                    const randomIndex = Math.floor(Math.random() * learningQuotes.length);
+                    return learningQuotes[randomIndex];
+                }
+            },
+
+            clearSessionQuote: () => {
+                try {
+                    localStorage.removeItem('current_session_timestamp');
+                    localStorage.removeItem('current_session_quote');
+                    // Also remove old session ID key if it exists
+                    localStorage.removeItem('current_session_id');
+                } catch (error) {
+                    console.error('Error clearing session quote:', error);
+                }
+            },
+
+            // Force generate a new quote (for testing or manual refresh)
+            forceNewQuote: () => {
+                try {
+                    QuoteUtils.clearSessionQuote();
+                    return QuoteUtils.getSessionQuote();
+                } catch (error) {
+                    console.error('Error forcing new quote:', error);
+                    const randomIndex = Math.floor(Math.random() * learningQuotes.length);
+                    return learningQuotes[randomIndex];
+                }
             }
         };
 
@@ -1203,6 +1283,8 @@
             const [showReviewModal, setShowReviewModal] = useState(false);
             const [uploadProgress, setUploadProgress] = useState(0);
             const [isUploading, setIsUploading] = useState(false);
+            const [showUploadHelp, setShowUploadHelp] = useState(false);
+            const [currentQuote, setCurrentQuote] = useState(() => QuoteUtils.getSessionQuote());
             const fileInputRef = useRef(null);
             const timerIntervalRef = useRef(null);
 
@@ -1214,6 +1296,15 @@
 
             // Load data from localStorage on startup
             useEffect(() => {
+                // One-time cleanup of old session data to fix quote rotation
+                const oldSessionId = localStorage.getItem('current_session_id');
+                if (oldSessionId) {
+                    console.log('Cleaning up old session data...');
+                    localStorage.removeItem('current_session_id');
+                    // Force new quote selection after cleanup
+                    setCurrentQuote(QuoteUtils.forceNewQuote());
+                }
+
                 const savedHistory = DataStorage.loadQuizHistory();
                 setQuizHistory(savedHistory);
 
@@ -1437,30 +1528,73 @@
                     return;
                 }
 
-                const questionsByTopic = filteredQuestions.reduce((acc, question) => {
-                    if (!acc[question.topic]) {
-                        acc[question.topic] = [];
-                    }
-                    acc[question.topic].push(question);
-                    return acc;
-                }, {});
-
+                // Use a Set to track used question IDs to prevent duplicates
+                const usedQuestionIds = new Set();
                 const selectedQuestions = [];
-                const topics = Object.keys(questionsByTopic);
-                
-                const questionsPerTopic = Math.ceil(questionCount / topics.length);
-                
-                topics.forEach(topic => {
-                    const topicQuestions = questionsByTopic[topic];
-                    const shuffled = [...topicQuestions].sort(() => Math.random() - 0.5);
-                    selectedQuestions.push(...shuffled.slice(0, Math.min(questionsPerTopic, topicQuestions.length)));
-                });
 
+                // If topics are selected, distribute questions proportionally across topics
+                if (config.selectedTopics.length > 0) {
+                    const questionsByTopic = filteredQuestions.reduce((acc, question) => {
+                        if (!acc[question.topic]) {
+                            acc[question.topic] = [];
+                        }
+                        acc[question.topic].push(question);
+                        return acc;
+                    }, {});
+
+                    const topics = Object.keys(questionsByTopic);
+                    const questionsPerTopic = Math.floor(questionCount / topics.length);
+                    let remainingQuestions = questionCount % topics.length;
+
+                    // First, distribute the base amount per topic
+                    topics.forEach(topic => {
+                        const topicQuestions = questionsByTopic[topic].filter(q => !usedQuestionIds.has(q.id));
+                        const shuffled = [...topicQuestions].sort(() => Math.random() - 0.5);
+                        const toTake = Math.min(questionsPerTopic, shuffled.length);
+
+                        for (let i = 0; i < toTake; i++) {
+                            selectedQuestions.push(shuffled[i]);
+                            usedQuestionIds.add(shuffled[i].id);
+                        }
+                    });
+
+                    // Distribute remaining questions randomly across topics
+                    while (remainingQuestions > 0 && selectedQuestions.length < questionCount) {
+                        const remainingCandidates = filteredQuestions.filter(q => !usedQuestionIds.has(q.id));
+                        if (remainingCandidates.length === 0) break;
+
+                        const randomQuestion = remainingCandidates[Math.floor(Math.random() * remainingCandidates.length)];
+                        selectedQuestions.push(randomQuestion);
+                        usedQuestionIds.add(randomQuestion.id);
+                        remainingQuestions--;
+                    }
+                } else {
+                    // No specific topics selected, choose randomly from all available questions
+                    const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
+                    for (let i = 0; i < Math.min(questionCount, shuffled.length); i++) {
+                        if (!usedQuestionIds.has(shuffled[i].id)) {
+                            selectedQuestions.push(shuffled[i]);
+                            usedQuestionIds.add(shuffled[i].id);
+                        }
+                    }
+                }
+
+                // Final shuffle and ensure we have exactly the requested number of unique questions
                 const finalQuestions = selectedQuestions
                     .sort(() => Math.random() - 0.5)
                     .slice(0, questionCount)
                     .map((q, index) => ({ ...q, id: index + 1 }));
 
+                // Verification: Check for duplicates to ensure algorithm correctness
+                const questionTexts = finalQuestions.map(q => q.question);
+                const uniqueTexts = new Set(questionTexts);
+                if (questionTexts.length !== uniqueTexts.size) {
+                    console.error('Duplicate questions detected!', finalQuestions);
+                    alert('Lỗi: Phát hiện câu hỏi trùng lặp trong đề thi. Vui lòng thử lại.');
+                    return;
+                }
+
+                console.log(`Quiz created successfully with ${finalQuestions.length} unique questions`);
                 setQuestions(finalQuestions);
                 setAnswers({});
                 setCurrentQuestionIndex(0);
@@ -1632,6 +1766,9 @@
                     localStorage.removeItem('quiz_history_backup');
                     localStorage.removeItem('quiz_analytics_cache');
                     localStorage.removeItem('quiz_config');
+                    // Clear session quote and generate new one
+                    QuoteUtils.clearSessionQuote();
+                    setCurrentQuote(QuoteUtils.getSessionQuote());
                     // Reset quiz config to default
                     setQuizConfig({
                         name: 'Bài thi mẫu',
@@ -2424,7 +2561,7 @@
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h1 className="text-xl font-bold text-gray-800 mb-1">Thi Trắc Nghiệm</h1>
-                                    <p className="text-sm text-gray-600">Hệ thống thi trắc nghiệm hiện đại</p>
+                                    <p className="text-sm text-gray-600">Hệ thống Ôn luyện và thi thử trắc nghiệm</p>
                                 </div>
                                 <button
                                     onClick={() => setSidebarOpen(false)}
@@ -2436,36 +2573,51 @@
                         </div>
 
                         {/* Upload Excel */}
-                        <div className="mb-6">
-                            <h3 className="font-semibold mb-3 flex items-center text-gray-800">
-                                <Upload className="mr-2 text-blue-600" />
-                                Upload Câu Hỏi
-                            </h3>
-                            
-                            <div className="mb-3">
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={isUploading || quizStarted}
-                                    className="w-full btn-secondary text-left justify-start"
-                                >
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    Chọn file Excel hoặc CSV
-                                </button>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/msexcel,application/x-msexcel,application/x-ms-excel,application/x-excel,application/x-dos_ms_excel,application/xls,application/x-xls,text/csv"
-                                    onChange={handleFileUpload}
-                                    disabled={isUploading || quizStarted}
-                                    className="hidden"
-                                />
+                        <div className="mb-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center text-sm font-medium text-gray-700">
+                                    <Upload className="w-4 h-4 mr-1 text-blue-600" />
+                                    Upload
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                    {availableQuestions.length} câu hỏi
+                                </span>
                             </div>
-                            
-                            <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded-lg border border-blue-200 mb-3">
-                                💡 <strong>Lưu ý cho mobile:</strong> Nếu không thấy file Excel, hãy thử:
-                                <br />• Chuyển file Excel thành CSV
-                                <br />• Sử dụng "Files" app để chọn file
-                                <br />• Hoặc sử dụng browser khác (Chrome, Firefox)
+
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading || quizStarted}
+                                className="w-full btn-secondary text-sm py-2 px-3 justify-center"
+                            >
+                                <Upload className="w-3 h-3 mr-1" />
+                                Chọn file
+                            </button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/msexcel,application/x-msexcel,application/x-ms-excel,application/x-excel,application/x-dos_ms_excel,application/xls,application/x-xls,text/csv"
+                                onChange={handleFileUpload}
+                                disabled={isUploading || quizStarted}
+                                className="hidden"
+                            />
+
+                            <div className="mt-2">
+                                <button
+                                    onClick={() => setShowUploadHelp(!showUploadHelp)}
+                                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                                >
+                                    💡 Hướng dẫn upload
+                                    <span className="ml-1">{showUploadHelp ? '▼' : '▶'}</span>
+                                </button>
+                                {showUploadHelp && (
+                                    <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded border border-blue-200 mt-1">
+                                        <div className="space-y-2">
+                                            <div><strong>Định dạng hỗ trợ:</strong> Excel (.xlsx, .xls) hoặc CSV (.csv)</div>
+                                            <div><strong>Android:</strong> Chọn file từ "Files" hoặc "Ảnh và Video"</div>
+                                            <div><strong>Lưu ý:</strong> Nếu không thấy file Excel, thử chuyển sang CSV hoặc dùng Chrome/Firefox</div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             
                             {isUploading && (
@@ -2488,48 +2640,35 @@
                                     </div>
                                 </div>
                             )}
-                            
-                            <p className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded-lg">
-                                📊 Hiện có: <span className="font-semibold text-blue-600">{availableQuestions.length}</span> câu hỏi ({availableTopics.length} chủ đề)
-                            </p>
                         </div>
 
                         {/* Create new quiz */}
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <button
                                 onClick={() => setShowCreateQuizModal(true)}
                                 disabled={quizStarted || isUploading}
-                                className="btn-primary w-full"
+                                className="btn-primary w-full text-sm py-2"
                             >
-                                <Plus className="w-4 h-4" />
-                                Tạo Bài Thi Mới
+                                <Plus className="w-3 h-3 mr-1" />
+                                Tạo Bài Thi
                             </button>
                             
-                            {quizStarted && (
-                                <button
-                                    onClick={() => setShowCancelConfirm(true)}
-                                    className="btn-error w-full mt-3"
-                                >
-                                    <X className="w-4 h-4" />
-                                    Hủy Phiên Thi
-                                </button>
-                            )}
                         </div>
 
                         {/* Quiz history */}
                         <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <h3 className="font-semibold flex items-center text-gray-800">
-                                    <BookOpen className="mr-2 text-purple-600" />
-                                    Lịch Sử Thi ({quizHistory.length})
-                                </h3>
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center text-sm font-medium text-gray-700">
+                                    <BookOpen className="w-4 h-4 mr-1 text-purple-600" />
+                                    Lịch Sử ({quizHistory.length})
+                                </div>
                                 {quizHistory.length > 0 && (
                                     <button
                                         onClick={clearAllHistory}
-                                        className="text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
+                                        className="text-red-500 hover:text-red-700 text-xs transition-colors"
                                         title="Xóa tất cả lịch sử"
                                     >
-                                        Xóa tất cả
+                                        Xóa
                                     </button>
                                 )}
                             </div>
@@ -2605,7 +2744,10 @@
                                     <BookOpen className="w-8 h-8 text-white" />
                                 </div>
                                 <h1 className="text-3xl md:text-4xl font-bold mb-3">Thi Trắc Nghiệm Online</h1>
-                                <p className="text-blue-100 text-lg">Hệ thống hỗ trợ Ôn tập và thử thi trắc nghiệm</p>
+                                <div className="text-blue-100 text-center">
+                                    <p className="text-lg italic mb-2">"{currentQuote.text}"</p>
+                                    <p className="text-sm opacity-75">— {currentQuote.author}</p>
+                                </div>
                             </div>
 
                             {/* Analytics Dashboard */}
@@ -2773,7 +2915,13 @@
                             {/* Timer component outside of QuizContent to prevent re-renders */}
                             <div className="max-w-4xl mx-auto mb-4">
                                 <div className="card card-shadow p-4">
-                                    <div className="flex justify-end">
+                                    <div className="flex justify-between items-center">
+                                        <button
+                                            onClick={() => setShowCancelConfirm(true)}
+                                            className="btn-error text-sm px-4 py-2"
+                                        >
+                                            ✕ Hủy bài thi
+                                        </button>
                                         <Timer timeLeft={timeLeft} quizStarted={quizStarted} onTimeUp={handleTimeUp} />
                                     </div>
                                 </div>
