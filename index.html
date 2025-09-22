@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thi Trắc Nghiệm Online - Modern UI</title>
+    <title>Thi Trắc Nghiệm Online - Analytics Dashboard</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
@@ -510,6 +511,44 @@
             border-radius: 50%;
         }
 
+        .analytics-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid var(--secondary-100);
+            transition: all 0.2s ease;
+            min-height: 300px;
+        }
+
+        .analytics-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.15);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin: 1rem 0;
+        }
+
+        .wrong-answer-item {
+            background: var(--error-50);
+            border: 1px solid var(--error-200);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .wrong-answer-count {
+            background: var(--error-600);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+        }
+
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .sidebar { 
@@ -552,6 +591,11 @@
                 border-radius: 1rem;
             }
             .card { padding: 1.25rem; }
+            .analytics-card { 
+                padding: 1rem;
+                min-height: 250px;
+            }
+            .chart-container { height: 150px; }
         }
         
         @media (min-width: 769px) {
@@ -594,6 +638,20 @@
         .sidebar-scrollable {
             max-height: calc(100vh - 200px);
             overflow-y: auto;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
     </style>
 </head>
@@ -683,6 +741,37 @@
             </svg>
         );
 
+        const TrendingUp = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <polyline points="23,6 13.5,15.5 8.5,10.5 1,18"></polyline>
+                <polyline points="17,6 23,6 23,12"></polyline>
+            </svg>
+        );
+
+        const Target = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+            </svg>
+        );
+
+        const AlertCircle = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+        );
+
+        const BarChart = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <line x1="12" y1="20" x2="12" y2="10"></line>
+                <line x1="18" y1="20" x2="18" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="16"></line>
+            </svg>
+        );
+
         // Sample data
         const defaultQuestions = [
             {
@@ -735,6 +824,283 @@
             }
         ];
 
+        // Data storage utilities with enhanced functionality
+        const DataStorage = {
+            // Quiz history methods
+            saveQuizHistory: (history) => {
+                try {
+                    localStorage.setItem('quiz_history_v2', JSON.stringify(history));
+                    localStorage.setItem('quiz_history_backup', JSON.stringify(history));
+                } catch (error) {
+                    console.error('Error saving quiz history:', error);
+                }
+            },
+
+            loadQuizHistory: () => {
+                try {
+                    // Try primary storage first
+                    let historyStr = localStorage.getItem('quiz_history_v2');
+                    if (!historyStr) {
+                        // Fallback to backup
+                        historyStr = localStorage.getItem('quiz_history_backup');
+                    }
+                    if (!historyStr) {
+                        // Migration from old format
+                        historyStr = localStorage.getItem('quizHistory');
+                    }
+                    
+                    if (historyStr) {
+                        const history = JSON.parse(historyStr);
+                        // Ensure all required fields exist
+                        return history.map(item => ({
+                            ...item,
+                            wrongAnswers: item.wrongAnswers || [],
+                            detailedAnswers: item.detailedAnswers || []
+                        }));
+                    }
+                    return [];
+                } catch (error) {
+                    console.error('Error loading quiz history:', error);
+                    return [];
+                }
+            },
+
+            // Wrong answers tracking
+            saveWrongAnswers: (wrongAnswers) => {
+                try {
+                    localStorage.setItem('quiz_wrong_answers', JSON.stringify(wrongAnswers));
+                } catch (error) {
+                    console.error('Error saving wrong answers:', error);
+                }
+            },
+
+            loadWrongAnswers: () => {
+                try {
+                    const wrongAnswersStr = localStorage.getItem('quiz_wrong_answers');
+                    return wrongAnswersStr ? JSON.parse(wrongAnswersStr) : {};
+                } catch (error) {
+                    console.error('Error loading wrong answers:', error);
+                    return {};
+                }
+            },
+
+            // Analytics cache
+            saveAnalyticsCache: (analytics) => {
+                try {
+                    localStorage.setItem('quiz_analytics_cache', JSON.stringify(analytics));
+                } catch (error) {
+                    console.error('Error saving analytics cache:', error);
+                }
+            },
+
+            loadAnalyticsCache: () => {
+                try {
+                    const cacheStr = localStorage.getItem('quiz_analytics_cache');
+                    return cacheStr ? JSON.parse(cacheStr) : null;
+                } catch (error) {
+                    console.error('Error loading analytics cache:', error);
+                    return null;
+                }
+            }
+        };
+
+        // Analytics utilities
+        const AnalyticsUtils = {
+            calculateProgressTrend: (quizHistory) => {
+                if (quizHistory.length < 2) return { trend: 'neutral', change: 0 };
+                
+                const recent = quizHistory.slice(0, 5);
+                const older = quizHistory.slice(5, 10);
+                
+                const recentAvg = recent.reduce((sum, quiz) => sum + parseFloat(quiz.percentage), 0) / recent.length;
+                const olderAvg = older.length > 0 ? older.reduce((sum, quiz) => sum + parseFloat(quiz.percentage), 0) / older.length : recentAvg;
+                
+                const change = recentAvg - olderAvg;
+                
+                return {
+                    trend: change > 5 ? 'up' : change < -5 ? 'down' : 'neutral',
+                    change: Math.abs(change).toFixed(1)
+                };
+            },
+
+            calculateTopicStrengths: (quizHistory) => {
+                const topicStats = {};
+                
+                quizHistory.forEach(quiz => {
+                    if (quiz.detailedAnswers) {
+                        quiz.detailedAnswers.forEach(answer => {
+                            if (!topicStats[answer.topic]) {
+                                topicStats[answer.topic] = { total: 0, correct: 0 };
+                            }
+                            topicStats[answer.topic].total++;
+                            if (answer.isCorrect) {
+                                topicStats[answer.topic].correct++;
+                            }
+                        });
+                    }
+                });
+
+                return Object.entries(topicStats).map(([topic, stats]) => ({
+                    topic,
+                    score: ((stats.correct / stats.total) * 10).toFixed(1),
+                    percentage: ((stats.correct / stats.total) * 100).toFixed(1)
+                }));
+            },
+
+            findFrequentWrongAnswers: (quizHistory) => {
+                const wrongAnswerCounts = {};
+                
+                // Only consider last 5 quizzes
+                const recentQuizzes = quizHistory.slice(0, 5);
+                
+                recentQuizzes.forEach(quiz => {
+                    if (quiz.detailedAnswers) {
+                        quiz.detailedAnswers.forEach(answer => {
+                            if (!answer.isCorrect) {
+                                const questionKey = answer.question;
+                                if (!wrongAnswerCounts[questionKey]) {
+                                    wrongAnswerCounts[questionKey] = {
+                                        question: answer.question,
+                                        options: answer.options,
+                                        correctAnswer: answer.correctAnswer,
+                                        count: 0,
+                                        topic: answer.topic
+                                    };
+                                }
+                                wrongAnswerCounts[questionKey].count++;
+                            }
+                        });
+                    }
+                });
+
+                return Object.values(wrongAnswerCounts)
+                    .filter(item => item.count > 2)
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 5);
+            }
+        };
+
+        // Chart components
+        const ScoreProgressChart = ({ quizHistory }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                if (chartRef.current && quizHistory.length > 0) {
+                    const ctx = chartRef.current.getContext('2d');
+                    
+                    // Destroy existing chart
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+
+                    const data = quizHistory.slice().reverse().slice(-10);
+                    
+                    chartInstance.current = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.map((_, index) => `Lần ${index + 1}`),
+                            datasets: [{
+                                label: 'Điểm (%)',
+                                data: data.map(quiz => parseFloat(quiz.percentage)),
+                                borderColor: '#0ea5e9',
+                                backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value + '%';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                return () => {
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+                };
+            }, [quizHistory]);
+
+            return <canvas ref={chartRef}></canvas>;
+        };
+
+        const TopicRadarChart = ({ topicStrengths }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                if (chartRef.current && topicStrengths.length > 0) {
+                    const ctx = chartRef.current.getContext('2d');
+                    
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+
+                    chartInstance.current = new Chart(ctx, {
+                        type: 'radar',
+                        data: {
+                            labels: topicStrengths.map(t => t.topic),
+                            datasets: [{
+                                label: 'Điểm',
+                                data: topicStrengths.map(t => parseFloat(t.score)),
+                                borderColor: '#a855f7',
+                                backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                                borderWidth: 2,
+                                pointBackgroundColor: '#a855f7',
+                                pointBorderColor: '#fff',
+                                pointRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                r: {
+                                    beginAtZero: true,
+                                    max: 10,
+                                    ticks: {
+                                        stepSize: 2
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                return () => {
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+                };
+            }, [topicStrengths]);
+
+            return <canvas ref={chartRef}></canvas>;
+        };
+
         // Utility functions
         const parseCorrectAnswers = (answerString) => {
             if (!answerString) return [];
@@ -778,6 +1144,7 @@
             const [viewingHistoryItem, setViewingHistoryItem] = useState(null);
             const [availableTopics, setAvailableTopics] = useState([]);
             const [sidebarOpen, setSidebarOpen] = useState(false);
+            const [analytics, setAnalytics] = useState(null);
             const [quizConfig, setQuizConfig] = useState({
                 name: 'Bài thi mẫu',
                 questionCount: '5',
@@ -790,6 +1157,7 @@
             const [uploadProgress, setUploadProgress] = useState(0);
             const [isUploading, setIsUploading] = useState(false);
             const fileInputRef = useRef(null);
+            const timerIntervalRef = useRef(null);
 
             // Extract topics from available questions
             useEffect(() => {
@@ -797,21 +1165,46 @@
                 setAvailableTopics(topics);
             }, [availableQuestions]);
 
-            // Load history from localStorage
+            // Load data from localStorage on startup
             useEffect(() => {
-                const savedHistory = localStorage.getItem('quizHistory');
-                if (savedHistory) {
-                    try {
-                        setQuizHistory(JSON.parse(savedHistory));
-                    } catch (error) {
-                        console.error('Lỗi khi load lịch sử:', error);
-                    }
+                const savedHistory = DataStorage.loadQuizHistory();
+                setQuizHistory(savedHistory);
+                
+                // Calculate analytics if there's history
+                if (savedHistory.length > 0) {
+                    calculateAnalytics(savedHistory);
                 }
             }, []);
 
-            // Save history to localStorage
+            // Save history to localStorage whenever it changes
             useEffect(() => {
-                localStorage.setItem('quizHistory', JSON.stringify(quizHistory));
+                if (quizHistory.length > 0) {
+                    DataStorage.saveQuizHistory(quizHistory);
+                }
+            }, [quizHistory]);
+
+            // Calculate analytics
+            const calculateAnalytics = useCallback((history = quizHistory) => {
+                if (history.length === 0) {
+                    setAnalytics(null);
+                    return;
+                }
+
+                const progressTrend = AnalyticsUtils.calculateProgressTrend(history);
+                const topicStrengths = AnalyticsUtils.calculateTopicStrengths(history);
+                const frequentWrongAnswers = AnalyticsUtils.findFrequentWrongAnswers(history);
+
+                const analyticsData = {
+                    progressTrend,
+                    topicStrengths,
+                    frequentWrongAnswers,
+                    totalQuizzes: history.length,
+                    averageScore: (history.reduce((sum, quiz) => sum + parseFloat(quiz.percentage), 0) / history.length).toFixed(1),
+                    passRate: ((history.filter(quiz => quiz.passed).length / history.length) * 100).toFixed(1)
+                };
+
+                setAnalytics(analyticsData);
+                DataStorage.saveAnalyticsCache(analyticsData);
             }, [quizHistory]);
 
             // Handle mobile sidebar
@@ -825,10 +1218,11 @@
                 return () => window.removeEventListener('resize', handleResize);
             }, []);
 
-            // Read Excel file with progress tracking
-            const readExcelFile = (file) => {
+            // Read Excel/CSV file with progress tracking
+            const readQuestionFile = (file) => {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
+                    const isCSV = file.name.toLowerCase().endsWith('.csv');
                     
                     reader.onprogress = (e) => {
                         if (e.lengthComputable) {
@@ -841,17 +1235,43 @@
                         try {
                             setUploadProgress(60);
                             
-                            const data = new Uint8Array(e.target.result);
-                            const workbook = XLSX.read(data, { type: 'array' });
+                            let jsonData;
                             
-                            setUploadProgress(70);
-                            
-                            const sheetName = workbook.SheetNames.find(name => 
-                                name.toLowerCase().includes('data')
-                            ) || workbook.SheetNames[0];
-                            
-                            const worksheet = workbook.Sheets[sheetName];
-                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                            if (isCSV) {
+                                const csvText = e.target.result;
+                                const lines = csvText.split('\n').filter(line => line.trim());
+                                jsonData = lines.map(line => {
+                                    const cells = [];
+                                    let current = '';
+                                    let inQuotes = false;
+                                    
+                                    for (let i = 0; i < line.length; i++) {
+                                        const char = line[i];
+                                        if (char === '"' && (i === 0 || line[i-1] === ',')) {
+                                            inQuotes = true;
+                                        } else if (char === '"' && inQuotes && (i === line.length - 1 || line[i+1] === ',')) {
+                                            inQuotes = false;
+                                        } else if (char === ',' && !inQuotes) {
+                                            cells.push(current.trim());
+                                            current = '';
+                                        } else {
+                                            current += char;
+                                        }
+                                    }
+                                    cells.push(current.trim());
+                                    return cells;
+                                });
+                            } else {
+                                const data = new Uint8Array(e.target.result);
+                                const workbook = XLSX.read(data, { type: 'array' });
+                                
+                                const sheetName = workbook.SheetNames.find(name => 
+                                    name.toLowerCase().includes('data')
+                                ) || workbook.SheetNames[0];
+                                
+                                const worksheet = workbook.Sheets[sheetName];
+                                jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                            }
                             
                             setUploadProgress(80);
                             
@@ -888,28 +1308,43 @@
                             reject(error);
                         }
                     };
+                    
                     reader.onerror = () => reject(new Error('Lỗi khi đọc file'));
-                    reader.readAsArrayBuffer(file);
+                    
+                    if (isCSV) {
+                        reader.readAsText(file, 'UTF-8');
+                    } else {
+                        reader.readAsArrayBuffer(file);
+                    }
                 });
             };
 
             const handleFileUpload = async (event) => {
                 const file = event.target.files[0];
                 if (file) {
+                    const fileType = file.name.toLowerCase();
+                    const isValidFile = fileType.endsWith('.xlsx') || fileType.endsWith('.xls') || fileType.endsWith('.csv');
+                    
+                    if (!isValidFile) {
+                        alert('Vui lòng chọn file Excel (.xlsx, .xls) hoặc CSV (.csv)');
+                        return;
+                    }
+                    
                     setIsUploading(true);
                     setUploadProgress(0);
                     
                     try {
-                        const questions = await readExcelFile(file);
+                        const questions = await readQuestionFile(file);
                         if (questions.length > 0) {
                             setAvailableQuestions(questions);
-                            alert(`Đã tải thành công ${questions.length} câu hỏi từ file Excel!`);
+                            const fileTypeText = fileType.endsWith('.csv') ? 'CSV' : 'Excel';
+                            alert(`Đã tải thành công ${questions.length} câu hỏi từ file ${fileTypeText}!`);
                         } else {
-                            alert('Không tìm thấy câu hỏi hợp lệ trong file Excel.');
+                            alert('Không tìm thấy câu hỏi hợp lệ trong file. Vui lòng kiểm tra định dạng file.');
                         }
                     } catch (error) {
-                        console.error('Lỗi khi đọc file Excel:', error);
-                        alert('Lỗi khi đọc file Excel. Vui lòng kiểm tra định dạng file.');
+                        console.error('Lỗi khi đọc file:', error);
+                        alert('Lỗi khi đọc file. Vui lòng kiểm tra định dạng file và thử lại.');
                     } finally {
                         setIsUploading(false);
                         setUploadProgress(0);
@@ -921,7 +1356,6 @@
             };
 
             const initializeQuiz = (config = quizConfig) => {
-                // Validate inputs
                 if (!validatePositiveInteger(config.questionCount)) {
                     alert('Số câu hỏi phải là số nguyên dương!');
                     return;
@@ -934,7 +1368,6 @@
                 const questionCount = parseInt(config.questionCount);
                 const timeMinutes = parseInt(config.timeMinutes);
 
-                // Filter questions by selected topics
                 let filteredQuestions = availableQuestions;
                 if (config.selectedTopics.length > 0) {
                     filteredQuestions = availableQuestions.filter(q => 
@@ -952,7 +1385,6 @@
                     return;
                 }
 
-                // Group questions by topic
                 const questionsByTopic = filteredQuestions.reduce((acc, question) => {
                     if (!acc[question.topic]) {
                         acc[question.topic] = [];
@@ -964,7 +1396,6 @@
                 const selectedQuestions = [];
                 const topics = Object.keys(questionsByTopic);
                 
-                // Distribute questions evenly across topics
                 const questionsPerTopic = Math.ceil(questionCount / topics.length);
                 
                 topics.forEach(topic => {
@@ -973,7 +1404,6 @@
                     selectedQuestions.push(...shuffled.slice(0, Math.min(questionsPerTopic, topicQuestions.length)));
                 });
 
-                // Shuffle again and limit number of questions
                 const finalQuestions = selectedQuestions
                     .sort(() => Math.random() - 0.5)
                     .slice(0, questionCount)
@@ -998,61 +1428,54 @@
                 setShowCancelConfirm(false);
             };
 
-            useEffect(() => {
-                let timer;
-                if (quizStarted && timeLeft > 0 && currentScreen === 'quiz') {
-                    timer = setInterval(() => {
-                        setTimeLeft(prev => {
-                            if (prev <= 1) {
-                                submitQuiz();
-                                return 0;
-                            }
-                            return prev - 1;
-                        });
-                    }, 1000);
-                }
-                return () => clearInterval(timer);
-            }, [quizStarted, timeLeft, currentScreen]);
-
             const formatTime = (seconds) => {
                 const minutes = Math.floor(seconds / 60);
                 const remainingSeconds = seconds % 60;
                 return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
             };
 
-            const handleAnswerSelect = (questionId, selectedOption) => {
-                const question = questions.find(q => q.id === questionId);
-                
-                if (question.isMultiChoice) {
-                    setAnswers(prev => {
+            // Memoized handlers to prevent re-renders
+            const handleAnswerSelect = useCallback((questionId, selectedOption, isMultiChoice) => {
+                setAnswers(prev => {
+                    if (isMultiChoice) {
                         const currentAnswers = prev[questionId] || [];
                         const newAnswers = currentAnswers.includes(selectedOption)
                             ? currentAnswers.filter(a => a !== selectedOption)
                             : [...currentAnswers, selectedOption];
-                        
+
                         return {
                             ...prev,
                             [questionId]: newAnswers
                         };
-                    });
-                } else {
-                    setAnswers(prev => ({
-                        ...prev,
-                        [questionId]: selectedOption
-                    }));
-                }
-            };
+                    } else {
+                        return {
+                            ...prev,
+                            [questionId]: selectedOption
+                        };
+                    }
+                });
+            }, []);
 
-            const submitQuiz = () => {
-                const totalQuestions = questions.length;
+            const handleNavigate = useCallback((direction, index, questionsLength) => {
+                if (direction === 'prev') {
+                    setCurrentQuestionIndex(prev => Math.max(0, prev - 1));
+                } else if (direction === 'next') {
+                    setCurrentQuestionIndex(prev => Math.min(questionsLength - 1, prev + 1));
+                } else if (direction === 'goto') {
+                    setCurrentQuestionIndex(index);
+                }
+            }, []);
+
+            const submitQuizInternal = useCallback((questionsData, answersData, config, currentTimeLeft) => {
+                const totalQuestions = questionsData.length;
                 let correctAnswers = 0;
 
-                const detailedAnswers = questions.map(question => {
-                    const userAnswer = answers[question.id];
+                const detailedAnswers = questionsData.map(question => {
+                    const userAnswer = answersData[question.id];
                     const isCorrect = checkAnswer(userAnswer, question.correctAnswer, question.isMultiChoice);
-                    
+
                     if (isCorrect) correctAnswers++;
-                    
+
                     return {
                         question: question.question,
                         options: question.options,
@@ -1071,7 +1494,7 @@
 
                 const result = {
                     id: Date.now(),
-                    quizName: quizConfig.name,
+                    quizName: config.name,
                     date: new Date().toLocaleString('vi-VN'),
                     totalQuestions,
                     correctAnswers,
@@ -1079,17 +1502,42 @@
                     maxScore,
                     percentage: percentage.toFixed(1),
                     passed,
-                    timeUsed: parseInt(quizConfig.timeMinutes) * 60 - timeLeft,
-                    totalTime: parseInt(quizConfig.timeMinutes) * 60,
+                    timeUsed: parseInt(config.timeMinutes) * 60 - currentTimeLeft,
+                    totalTime: parseInt(config.timeMinutes) * 60,
                     detailedAnswers: detailedAnswers,
-                    selectedTopics: quizConfig.selectedTopics
+                    selectedTopics: config.selectedTopics
                 };
 
                 setCurrentResult(result);
-                setQuizHistory(prev => [result, ...prev]);
+                setQuizHistory(prev => {
+                    const newHistory = [result, ...prev];
+                    // Recalculate analytics with new data
+                    setTimeout(() => calculateAnalytics(newHistory), 100);
+                    return newHistory;
+                });
                 setQuizStarted(false);
                 setCurrentScreen('result');
+
+                // Clear timer
+                if (timerIntervalRef.current) {
+                    clearInterval(timerIntervalRef.current);
+                    timerIntervalRef.current = null;
+                }
+            }, [calculateAnalytics]);
+
+            const submitQuiz = useCallback(() => {
+                submitQuizInternal(questions, answers, quizConfig, timeLeft);
+            }, [submitQuizInternal, questions, answers, quizConfig, timeLeft]);
+
+            // Create stable reference for timer callback
+            const stableTimeUpRef = useRef(() => {});
+            stableTimeUpRef.current = () => {
+                submitQuizInternal(questions, answers, quizConfig, timeLeft);
             };
+
+            const handleTimeUp = useCallback(() => {
+                stableTimeUpRef.current();
+            }, []);
 
             const retakeQuiz = () => {
                 setCurrentResult(null);
@@ -1098,19 +1546,391 @@
 
             const deleteQuizHistory = (id) => {
                 if (confirm('Bạn có chắc muốn xóa kết quả thi này?')) {
-                    setQuizHistory(prev => prev.filter(item => item.id !== id));
+                    const newHistory = quizHistory.filter(item => item.id !== id);
+                    setQuizHistory(newHistory);
+                    calculateAnalytics(newHistory);
                 }
             };
 
             const clearAllHistory = () => {
                 if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử thi?')) {
                     setQuizHistory([]);
+                    setAnalytics(null);
+                    localStorage.removeItem('quiz_history_v2');
+                    localStorage.removeItem('quiz_history_backup');
+                    localStorage.removeItem('quiz_analytics_cache');
                 }
             };
 
             const viewHistoryItem = (historyItem) => {
                 setViewingHistoryItem(historyItem);
                 setShowReviewModal(true);
+            };
+
+            // Timer component tách riêng để tránh re-render
+            const Timer = React.memo(({ timeLeft, quizStarted, onTimeUp }) => {
+                const timerRef = useRef(null);
+                
+                useEffect(() => {
+                    if (quizStarted && timeLeft > 0) {
+                        timerRef.current = setInterval(() => {
+                            setTimeLeft(prev => {
+                                if (prev <= 1) {
+                                    onTimeUp();
+                                    return 0;
+                                }
+                                return prev - 1;
+                            });
+                        }, 1000);
+                    } else {
+                        if (timerRef.current) {
+                            clearInterval(timerRef.current);
+                        }
+                    }
+                    
+                    return () => {
+                        if (timerRef.current) {
+                            clearInterval(timerRef.current);
+                        }
+                    };
+                }, [quizStarted, onTimeUp, timeLeft]);
+                
+                return (
+                    <div className={`flex items-center space-x-3 timer ${timeLeft < 300 ? 'text-red-600 warning' : 'text-green-600'} self-end md:self-auto`}>
+                        <Clock className="w-5 h-5" />
+                        <span className="text-xl font-bold">{formatTime(timeLeft)}</span>
+                    </div>
+                );
+            });
+
+            // Memoized QuizContent component to prevent unnecessary re-renders
+            const QuizContent = React.memo(({
+                currentQuestion,
+                currentQuestionIndex,
+                questions,
+                answers,
+                onAnswerSelect,
+                onNavigate,
+                onSubmit,
+                quizConfig
+            }) => {
+                // Safety checks
+                if (!currentQuestion || !questions || questions.length === 0) {
+                    return (
+                        <div className="max-w-4xl mx-auto">
+                            <div className="card card-shadow text-center p-8">
+                                <h2 className="text-xl font-bold text-red-600 mb-4">Lỗi tải câu hỏi</h2>
+                                <p className="text-gray-600">Không thể tải câu hỏi. Vui lòng quay về trang chủ và thử lại.</p>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="btn-primary mt-4"
+                                >
+                                    Tải lại trang
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (!currentQuestion.options || currentQuestion.options.length === 0) {
+                    return (
+                        <div className="max-w-4xl mx-auto">
+                            <div className="card card-shadow text-center p-8">
+                                <h2 className="text-xl font-bold text-red-600 mb-4">Lỗi câu hỏi</h2>
+                                <p className="text-gray-600">Câu hỏi hiện tại không có đáp án. Vui lòng kiểm tra dữ liệu câu hỏi.</p>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="max-w-4xl mx-auto">
+                        {/* Header with timer */}
+                        <div className="card card-shadow mb-6 p-6">
+                            <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+                                <div className="flex flex-col md:flex-row md:items-center md:space-x-6 mb-4 md:mb-0">
+                                    <span className="font-bold text-lg text-gray-800">Câu {currentQuestionIndex + 1}/{questions.length}</span>
+                                    <span className="text-gray-600 text-sm bg-gray-100 px-3 py-1 rounded-lg mt-2 md:mt-0">{currentQuestion.topic || 'Chung'}</span>
+                                    <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mt-2 md:mt-0 font-medium">{quizConfig.name || 'Bài thi'}</span>
+                                    {currentQuestion.isMultiChoice && (
+                                        <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-lg mt-2 md:mt-0 font-medium">Nhiều lựa chọn</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Question */}
+                        <div className="card card-shadow mb-6">
+                            <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-800">{currentQuestion.question}</h2>
+                            
+                            {currentQuestion.isMultiChoice && (
+                                <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                                    <div className="text-sm text-orange-700 flex items-center">
+                                        <span className="text-lg mr-2">⚡</span>
+                                        <strong>Lưu ý:</strong> Đây là câu hỏi nhiều lựa chọn. Bạn có thể chọn nhiều đáp án.
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <div className="space-y-4">
+                                {currentQuestion.options.map((option, index) => {
+                                    const optionLetter = String.fromCharCode(65 + index);
+                                    let isSelected = false;
+                                    
+                                    if (currentQuestion.isMultiChoice) {
+                                        const selectedAnswers = answers[currentQuestion.id] || [];
+                                        isSelected = selectedAnswers.includes(optionLetter);
+                                    } else {
+                                        isSelected = answers[currentQuestion.id] === optionLetter;
+                                    }
+                                    
+                                    return (
+                                        <label
+                                            key={`${currentQuestion.id}-${optionLetter}-${index}`}
+                                            className={`question-option ${isSelected ? 'selected' : ''}`}
+                                        >
+                                            <input
+                                                type={currentQuestion.isMultiChoice ? "checkbox" : "radio"}
+                                                name={currentQuestion.isMultiChoice ? undefined : `question-${currentQuestion.id}`}
+                                                value={optionLetter}
+                                                checked={isSelected}
+                                                onChange={() => onAnswerSelect(currentQuestion.id, optionLetter, currentQuestion.isMultiChoice)}
+                                                className={currentQuestion.isMultiChoice ? "checkbox-custom" : "radio-custom"}
+                                            />
+                                            <div>
+                                                <span className="font-bold text-gray-700 mr-3">{optionLetter}.</span>
+                                                <span className="text-gray-800">{option}</span>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Navigation */}
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 space-y-4 md:space-y-0">
+                            <button
+                                onClick={() => onNavigate('prev', null, questions.length)}
+                                disabled={currentQuestionIndex === 0}
+                                className="btn-secondary order-1 md:order-none"
+                            >
+                                ← Câu trước
+                            </button>
+
+                            <button
+                                onClick={onSubmit}
+                                className="btn-error order-3 md:order-none px-8"
+                            >
+                                Nộp bài thi
+                            </button>
+
+                            <button
+                                onClick={() => onNavigate('next', null, questions.length)}
+                                disabled={currentQuestionIndex === questions.length - 1}
+                                className="btn-secondary order-2 md:order-none"
+                            >
+                                Câu sau →
+                            </button>
+                        </div>
+
+                        {/* Question Navigation */}
+                        <div className="card card-shadow">
+                            <h3 className="font-bold mb-4 text-gray-800">Danh sách câu hỏi</h3>
+                            <div className="grid grid-cols-5 md:grid-cols-10 gap-3">
+                                {questions.map((_, index) => {
+                                    const question = questions[index];
+                                    const isAnswered = answers[question.id];
+                                    const isCurrent = index === currentQuestionIndex;
+                                    
+                                    let buttonClass = 'question-nav-btn ';
+                                    if (isCurrent) {
+                                        buttonClass += 'current';
+                                    } else if (isAnswered) {
+                                        buttonClass += 'answered';
+                                    } else {
+                                        buttonClass += 'unanswered';
+                                    }
+                                    
+                                    return (
+                                        <button
+                                            key={`nav-${question.id}-${index}`}
+                                            onClick={() => onNavigate('goto', index, questions.length)}
+                                            className={buttonClass}
+                                        >
+                                            {index + 1}
+                                            {question.isMultiChoice && (
+                                                <div className="multi-choice-indicator"></div>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <div className="mt-4 text-xs text-gray-500 flex items-center">
+                                <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
+                                Câu hỏi nhiều lựa chọn
+                            </div>
+                        </div>
+                    </div>
+                );
+            });
+
+            // Analytics Dashboard Component
+            const AnalyticsDashboard = () => {
+                if (!analytics || quizHistory.length === 0) {
+                    return (
+                        <div className="analytics-grid">
+                            <div className="analytics-card">
+                                <div className="text-center py-8">
+                                    <BarChart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                                    <p className="text-gray-500">Chưa có dữ liệu để phân tích</p>
+                                    <p className="text-sm text-gray-400 mt-2">Hãy thực hiện ít nhất một bài thi để xem thống kê</p>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+                            <BarChart className="w-6 h-6 mr-3 text-blue-600" />
+                            Dashboard Analytics
+                        </h2>
+                        
+                        {/* Stats Overview */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div className="card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-blue-100 text-sm">Tổng số bài thi</p>
+                                        <p className="text-2xl font-bold">{analytics.totalQuizzes}</p>
+                                    </div>
+                                    <BookOpen className="w-8 h-8 text-blue-200" />
+                                </div>
+                            </div>
+                            
+                            <div className="card bg-gradient-to-r from-green-500 to-green-600 text-white">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-green-100 text-sm">Điểm trung bình</p>
+                                        <p className="text-2xl font-bold">{analytics.averageScore}%</p>
+                                    </div>
+                                    <Target className="w-8 h-8 text-green-200" />
+                                </div>
+                            </div>
+                            
+                            <div className="card bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-purple-100 text-sm">Tỷ lệ đỗ</p>
+                                        <p className="text-2xl font-bold">{analytics.passRate}%</p>
+                                    </div>
+                                    <Award className="w-8 h-8 text-purple-200" />
+                                </div>
+                            </div>
+                            
+                            <div className="card bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-orange-100 text-sm">Xu hướng</p>
+                                        <p className="text-lg font-bold flex items-center">
+                                            {analytics.progressTrend.trend === 'up' && <TrendingUp className="w-5 h-5 mr-1" />}
+                                            {analytics.progressTrend.trend === 'down' && <TrendingUp className="w-5 h-5 mr-1 transform rotate-180" />}
+                                            {analytics.progressTrend.trend === 'neutral' && <span className="w-5 h-5 mr-1">→</span>}
+                                            {analytics.progressTrend.change}%
+                                        </p>
+                                    </div>
+                                    <TrendingUp className="w-8 h-8 text-orange-200" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Charts */}
+                        <div className="analytics-grid">
+                            {/* Score Progress Chart */}
+                            <div className="analytics-card">
+                                <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center">
+                                    <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
+                                    Tiến trình điểm số
+                                </h3>
+                                <div className="chart-container">
+                                    <ScoreProgressChart quizHistory={quizHistory} />
+                                </div>
+                                <div className="mt-4 text-sm text-gray-600">
+                                    <p className="flex items-center">
+                                        <span className={`w-3 h-3 rounded-full mr-2 ${
+                                            analytics.progressTrend.trend === 'up' ? 'bg-green-500' :
+                                            analytics.progressTrend.trend === 'down' ? 'bg-red-500' : 'bg-gray-400'
+                                        }`}></span>
+                                        {analytics.progressTrend.trend === 'up' && 'Đang tiến bộ'}
+                                        {analytics.progressTrend.trend === 'down' && 'Đang thụt lùi'}
+                                        {analytics.progressTrend.trend === 'neutral' && 'Ổn định'}
+                                        {analytics.progressTrend.change > 0 && ` (+${analytics.progressTrend.change}%)`}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Topic Strengths Radar */}
+                            {analytics.topicStrengths.length > 0 && (
+                                <div className="analytics-card">
+                                    <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center">
+                                        <Target className="w-5 h-5 mr-2 text-purple-600" />
+                                        Thế mạnh theo chủ đề
+                                    </h3>
+                                    <div className="chart-container">
+                                        <TopicRadarChart topicStrengths={analytics.topicStrengths} />
+                                    </div>
+                                    <div className="mt-4 space-y-2">
+                                        {analytics.topicStrengths.slice(0, 3).map((topic, index) => (
+                                            <div key={index} className="flex justify-between items-center text-sm">
+                                                <span className="text-gray-600">{topic.topic}</span>
+                                                <span className={`font-semibold ${
+                                                    parseFloat(topic.score) >= 8 ? 'text-green-600' :
+                                                    parseFloat(topic.score) >= 6 ? 'text-yellow-600' : 'text-red-600'
+                                                }`}>
+                                                    {topic.score}/10
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Frequent Wrong Answers */}
+                            {analytics.frequentWrongAnswers.length > 0 && (
+                                <div className="analytics-card md:col-span-2">
+                                    <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center">
+                                        <AlertCircle className="w-5 h-5 mr-2 text-red-600" />
+                                        Câu hỏi thường sai ({analytics.frequentWrongAnswers.length})
+                                    </h3>
+                                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                                        {analytics.frequentWrongAnswers.map((item, index) => (
+                                            <div key={index} className="wrong-answer-item">
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <h4 className="font-semibold text-sm text-gray-800 flex-1 pr-3">
+                                                        {item.question}
+                                                    </h4>
+                                                    <span className="wrong-answer-count">
+                                                        {item.count} lần sai
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs text-gray-600 mb-2">
+                                                    Chủ đề: <span className="font-medium">{item.topic}</span>
+                                                </div>
+                                                <div className="text-xs text-green-700 bg-green-50 p-2 rounded border border-green-200">
+                                                    <strong>Đáp án đúng:</strong> {item.correctAnswer}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-4 text-xs text-gray-500 bg-blue-50 p-3 rounded border border-blue-200">
+                                        💡 <strong>Lời khuyên:</strong> Hãy tập trung ôn tập những câu hỏi này để cải thiện kết quả thi.
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
             };
 
             // Review Modal Component
@@ -1224,7 +2044,7 @@
             };
 
             // Create Quiz Modal
-            const CreateQuizModal = () => {
+            const CreateQuizModal = React.memo(() => {
                 const [tempConfig, setTempConfig] = useState(quizConfig);
 
                 const handleConfigChange = useCallback((field, value) => {
@@ -1243,37 +2063,54 @@
                     }));
                 }, []);
 
-                const selectAllTopics = () => {
+                const selectAllTopics = useCallback(() => {
                     setTempConfig(prev => ({
                         ...prev,
                         selectedTopics: [...availableTopics]
                     }));
-                };
+                }, [availableTopics]);
 
-                const clearAllTopics = () => {
+                const clearAllTopics = useCallback(() => {
                     setTempConfig(prev => ({
                         ...prev,
                         selectedTopics: []
                     }));
-                };
+                }, []);
 
-                const handleSubmit = () => {
-                    if (!validatePositiveInteger(tempConfig.questionCount)) {
-                        alert('Số câu hỏi phải là số nguyên dương!');
-                        return;
+                const handleSubmit = useCallback(() => {
+                    try {
+                        if (!validatePositiveInteger(tempConfig.questionCount)) {
+                            alert('Số câu hỏi phải là số nguyên dương!');
+                            return;
+                        }
+                        if (!validatePositiveInteger(tempConfig.timeMinutes)) {
+                            alert('Thời gian phải là số nguyên dương!');
+                            return;
+                        }
+                        if (!tempConfig.name.trim()) {
+                            alert('Vui lòng nhập tên bài thi!');
+                            return;
+                        }
+                        
+                        // Validate we have available questions
+                        if (!availableQuestions || availableQuestions.length === 0) {
+                            alert('Không có câu hỏi nào có sẵn. Vui lòng upload file câu hỏi trước.');
+                            return;
+                        }
+                        
+                        initializeQuiz(tempConfig);
+                    } catch (error) {
+                        console.error('Error in CreateQuizModal handleSubmit:', error);
+                        alert('Có lỗi xảy ra khi tạo bài thi. Vui lòng thử lại.');
                     }
-                    if (!validatePositiveInteger(tempConfig.timeMinutes)) {
-                        alert('Thời gian phải là số nguyên dương!');
-                        return;
+                }, [tempConfig, initializeQuiz, availableQuestions]);
+
+                // Reset tempConfig when modal opens
+                useEffect(() => {
+                    if (showCreateQuizModal) {
+                        setTempConfig(quizConfig);
                     }
-                    if (!tempConfig.name.trim()) {
-                        alert('Vui lòng nhập tên bài thi!');
-                        return;
-                    }
-                    
-                    setQuizConfig(tempConfig);
-                    initializeQuiz(tempConfig);
-                };
+                }, [showCreateQuizModal, quizConfig]);
 
                 if (!showCreateQuizModal) return null;
 
@@ -1399,7 +2236,7 @@
                                         </div>
                                         <div className="flex justify-between">
                                             <span>🎯 Điểm đỗ:</span>
-                                            <span className="font-semibold text-green-600">>{validatePositiveInteger(tempConfig.questionCount) ? Math.ceil(parseInt(tempConfig.questionCount) * 0.75 * 2) : '?'} điểm (>75%)</span>
+                                            <span className="font-semibold text-green-600">{validatePositiveInteger(tempConfig.questionCount) ? Math.ceil(parseInt(tempConfig.questionCount) * 0.75 * 2) : '?'} điểm (&gt;75%)</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span>⏱️ Thời gian:</span>
@@ -1433,7 +2270,7 @@
                         </div>
                     </div>
                 );
-            };
+            });
 
             // Cancel Confirm Modal
             const CancelConfirmModal = () => {
@@ -1520,14 +2357,32 @@
                                 <Upload className="mr-2 text-blue-600" />
                                 Upload Câu Hỏi
                             </h3>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-                                onChange={handleFileUpload}
-                                disabled={isUploading || quizStarted}
-                                className="w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:transition-colors disabled:opacity-50"
-                            />
+                            
+                            <div className="mb-3">
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isUploading || quizStarted}
+                                    className="w-full btn-secondary text-left justify-start"
+                                >
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    Chọn file Excel hoặc CSV
+                                </button>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/msexcel,application/x-msexcel,application/x-ms-excel,application/x-excel,application/x-dos_ms_excel,application/xls,application/x-xls,text/csv"
+                                    onChange={handleFileUpload}
+                                    disabled={isUploading || quizStarted}
+                                    className="hidden"
+                                />
+                            </div>
+                            
+                            <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded-lg border border-blue-200 mb-3">
+                                💡 <strong>Lưu ý cho mobile:</strong> Nếu không thấy file Excel, hãy thử:
+                                <br />• Chuyển file Excel thành CSV
+                                <br />• Sử dụng "Files" app để chọn file
+                                <br />• Hoặc sử dụng browser khác (Chrome, Firefox)
+                            </div>
                             
                             {isUploading && (
                                 <div className="mt-3">
@@ -1663,6 +2518,9 @@
                                 <p className="text-blue-100 text-lg">Quy trình Đánh giá Mức độ Hoàn thành Công việc</p>
                             </div>
 
+                            {/* Analytics Dashboard */}
+                            <AnalyticsDashboard />
+
                             <div className="card card-shadow mb-8">
                                 <h2 className="text-2xl font-bold mb-6 text-gray-800">Hướng dẫn sử dụng</h2>
                                 <div className="text-left space-y-6">
@@ -1687,9 +2545,9 @@
                                         },
                                         {
                                             step: 4,
-                                            title: "Xem kết quả và review",
-                                            description: "Xem điểm số, lịch sử các lần thi và review chi tiết câu trả lời",
-                                            icon: <Award className="w-5 h-5 text-yellow-600" />
+                                            title: "Xem kết quả và analytics",
+                                            description: "Xem điểm số, lịch sử các lần thi, phân tích tiến độ và review chi tiết câu trả lời",
+                                            icon: <BarChart className="w-5 h-5 text-yellow-600" />
                                         }
                                     ].map((item, index) => (
                                         <div key={index} className="flex items-start group">
@@ -1763,139 +2621,83 @@
                 }
 
                 if (currentScreen === 'quiz') {
+                    // Add safety checks
+                    if (!questions || questions.length === 0) {
+                        return (
+                            <div className="text-center max-w-4xl mx-auto">
+                                <div className="card card-shadow p-8">
+                                    <h2 className="text-xl font-bold text-red-600 mb-4">Lỗi khởi tạo bài thi</h2>
+                                    <p className="text-gray-600 mb-4">Không thể tải câu hỏi. Vui lòng thử lại.</p>
+                                    <button
+                                        onClick={() => setCurrentScreen('home')}
+                                        className="btn-primary"
+                                    >
+                                        Về trang chủ
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    if (currentQuestionIndex >= questions.length || currentQuestionIndex < 0) {
+                        return (
+                            <div className="text-center max-w-4xl mx-auto">
+                                <div className="card card-shadow p-8">
+                                    <h2 className="text-xl font-bold text-red-600 mb-4">Lỗi câu hỏi</h2>
+                                    <p className="text-gray-600 mb-4">Chỉ số câu hỏi không hợp lệ. Vui lòng thử lại.</p>
+                                    <button
+                                        onClick={() => {
+                                            setCurrentQuestionIndex(0);
+                                            setCurrentScreen('home');
+                                        }}
+                                        className="btn-primary"
+                                    >
+                                        Về trang chủ
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    }
+
                     const currentQuestion = questions[currentQuestionIndex];
                     
+                    if (!currentQuestion) {
+                        return (
+                            <div className="text-center max-w-4xl mx-auto">
+                                <div className="card card-shadow p-8">
+                                    <h2 className="text-xl font-bold text-red-600 mb-4">Lỗi câu hỏi</h2>
+                                    <p className="text-gray-600 mb-4">Không thể tải câu hỏi hiện tại. Vui lòng thử lại.</p>
+                                    <button
+                                        onClick={() => setCurrentScreen('home')}
+                                        className="btn-primary"
+                                    >
+                                        Về trang chủ
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    }
+                    
                     return (
-                        <div className="max-w-4xl mx-auto">
-                            {/* Header with timer */}
-                            <div className="card card-shadow mb-6 p-6">
-                                <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                                    <div className="flex flex-col md:flex-row md:items-center md:space-x-6 mb-4 md:mb-0">
-                                        <span className="font-bold text-lg text-gray-800">Câu {currentQuestionIndex + 1}/{questions.length}</span>
-                                        <span className="text-gray-600 text-sm bg-gray-100 px-3 py-1 rounded-lg mt-2 md:mt-0">{currentQuestion.topic}</span>
-                                        <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-lg mt-2 md:mt-0 font-medium">{quizConfig.name}</span>
-                                        {currentQuestion.isMultiChoice && (
-                                            <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-lg mt-2 md:mt-0 font-medium">Nhiều lựa chọn</span>
-                                        )}
-                                    </div>
-                                    <div className={`flex items-center space-x-3 timer ${timeLeft < 300 ? 'text-red-600 warning' : 'text-green-600'} self-end md:self-auto`}>
-                                        <Clock className="w-5 h-5" />
-                                        <span className="text-xl font-bold">{formatTime(timeLeft)}</span>
+                        <div>
+                            {/* Timer component outside of QuizContent to prevent re-renders */}
+                            <div className="max-w-4xl mx-auto mb-4">
+                                <div className="card card-shadow p-4">
+                                    <div className="flex justify-end">
+                                        <Timer timeLeft={timeLeft} quizStarted={quizStarted} onTimeUp={handleTimeUp} />
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Question */}
-                            <div className="card card-shadow mb-6">
-                                <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-800">{currentQuestion.question}</h2>
-                                
-                                {currentQuestion.isMultiChoice && (
-                                    <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-                                        <div className="text-sm text-orange-700 flex items-center">
-                                            <span className="text-lg mr-2">⚡</span>
-                                            <strong>Lưu ý:</strong> Đây là câu hỏi nhiều lựa chọn. Bạn có thể chọn nhiều đáp án.
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                <div className="space-y-4">
-                                    {currentQuestion.options.map((option, index) => {
-                                        const optionLetter = String.fromCharCode(65 + index);
-                                        let isSelected = false;
-                                        
-                                        if (currentQuestion.isMultiChoice) {
-                                            const selectedAnswers = answers[currentQuestion.id] || [];
-                                            isSelected = selectedAnswers.includes(optionLetter);
-                                        } else {
-                                            isSelected = answers[currentQuestion.id] === optionLetter;
-                                        }
-                                        
-                                        return (
-                                            <label
-                                                key={index}
-                                                className={`question-option ${isSelected ? 'selected' : ''}`}
-                                            >
-                                                <input
-                                                    type={currentQuestion.isMultiChoice ? "checkbox" : "radio"}
-                                                    name={currentQuestion.isMultiChoice ? undefined : `question-${currentQuestion.id}`}
-                                                    value={optionLetter}
-                                                    checked={isSelected}
-                                                    onChange={() => handleAnswerSelect(currentQuestion.id, optionLetter)}
-                                                    className={currentQuestion.isMultiChoice ? "checkbox-custom" : "radio-custom"}
-                                                />
-                                                <div>
-                                                    <span className="font-bold text-gray-700 mr-3">{optionLetter}.</span>
-                                                    <span className="text-gray-800">{option}</span>
-                                                </div>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {/* Navigation */}
-                            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 space-y-4 md:space-y-0">
-                                <button
-                                    onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
-                                    disabled={currentQuestionIndex === 0}
-                                    className="btn-secondary order-1 md:order-none"
-                                >
-                                    ← Câu trước
-                                </button>
-
-                                <button
-                                    onClick={submitQuiz}
-                                    className="btn-error order-3 md:order-none px-8"
-                                >
-                                    Nộp bài thi
-                                </button>
-
-                                <button
-                                    onClick={() => setCurrentQuestionIndex(Math.min(questions.length - 1, currentQuestionIndex + 1))}
-                                    disabled={currentQuestionIndex === questions.length - 1}
-                                    className="btn-secondary order-2 md:order-none"
-                                >
-                                    Câu sau →
-                                </button>
-                            </div>
-
-                            {/* Question Navigation */}
-                            <div className="card card-shadow">
-                                <h3 className="font-bold mb-4 text-gray-800">Danh sách câu hỏi</h3>
-                                <div className="grid grid-cols-5 md:grid-cols-10 gap-3">
-                                    {questions.map((_, index) => {
-                                        const question = questions[index];
-                                        const isAnswered = answers[question.id];
-                                        const isCurrent = index === currentQuestionIndex;
-                                        
-                                        let buttonClass = 'question-nav-btn ';
-                                        if (isCurrent) {
-                                            buttonClass += 'current';
-                                        } else if (isAnswered) {
-                                            buttonClass += 'answered';
-                                        } else {
-                                            buttonClass += 'unanswered';
-                                        }
-                                        
-                                        return (
-                                            <button
-                                                key={index}
-                                                onClick={() => setCurrentQuestionIndex(index)}
-                                                className={buttonClass}
-                                            >
-                                                {index + 1}
-                                                {question.isMultiChoice && (
-                                                    <div className="multi-choice-indicator"></div>
-                                                )}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                <div className="mt-4 text-xs text-gray-500 flex items-center">
-                                    <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
-                                    Câu hỏi nhiều lựa chọn
-                                </div>
-                            </div>
+                            <QuizContent
+                                currentQuestion={currentQuestion}
+                                currentQuestionIndex={currentQuestionIndex}
+                                questions={questions}
+                                answers={answers}
+                                onAnswerSelect={handleAnswerSelect}
+                                onNavigate={handleNavigate}
+                                onSubmit={submitQuiz}
+                                quizConfig={quizConfig}
+                            />
                         </div>
                     );
                 }
@@ -1997,7 +2799,7 @@
                                         © 2025 Hệ thống Thi Trắc Nghiệm Online. Phát triển bởi <strong className="text-blue-600">ChuBi Assistant</strong>
                                     </p>
                                     <p className="text-xs text-gray-500">
-                                        Hỗ trợ câu hỏi single choice & multi choice | Tự động lưu lịch sử | Mobile friendly
+                                        Hỗ trợ câu hỏi single choice & multi choice | Analytics Dashboard | Tự động lưu lịch sử | Mobile friendly
                                     </p>
                                 </div>
                             </footer>
@@ -2035,3 +2837,4 @@
     </script>
 </body>
 </html>
+                
