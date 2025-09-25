@@ -737,6 +737,16 @@
             </svg>
         );
 
+        const FileText = ({ className = "w-5 h-5" }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path d="M14,2 L6,2 C4.9,2 4,2.9 4,4 L4,20 C4,21.1 4.9,22 6,22 L18,22 C19.1,22 20,21.1 20,20 L20,8 L14,2 Z"></path>
+                <polyline points="14,2 14,8 20,8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10,9 9,9 8,9"></polyline>
+            </svg>
+        );
+
         const AlertTriangle = ({ className = "w-5 h-5" }) => (
             <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -1284,6 +1294,10 @@
             const [uploadProgress, setUploadProgress] = useState(0);
             const [isUploading, setIsUploading] = useState(false);
             const [showUploadHelp, setShowUploadHelp] = useState(false);
+            const [showDocViewer, setShowDocViewer] = useState(false);
+            const [currentDoc, setCurrentDoc] = useState(null);
+            const [docList, setDocList] = useState([]);
+            const [loadingDocs, setLoadingDocs] = useState(false);
             const [currentQuote, setCurrentQuote] = useState(() => QuoteUtils.getSessionQuote());
             const fileInputRef = useRef(null);
             const timerIntervalRef = useRef(null);
@@ -1819,6 +1833,179 @@
                     </div>
                 );
             });
+
+            // Document utilities and functions
+            const loadDocumentList = async () => {
+                setLoadingDocs(true);
+                try {
+                    // Since this is GitHub Pages, we'll use a predefined list of documents
+                    const knownDocs = [
+                        {
+                            name: "Slide truyền thông CX online",
+                            file: "docs/2. Slide truyen thong CX online_2025.pdf",
+                            type: "pdf"
+                        },
+                        {
+                            name: "Bản tin Quy 1.2025",
+                            file: "docs/Ban tin Quy 1.2025.pdf",
+                            type: "pdf"
+                        },
+                        {
+                            name: "DS SK triển khai tới CN",
+                            file: "docs/DS SK triển khai tới CN - T8.2025.xlsx",
+                            type: "excel"
+                        },
+                        {
+                            name: "Newsletter Q2.2025",
+                            file: "docs/Newsletter Q2.2025.pdf",
+                            type: "pdf"
+                        },
+                        {
+                            name: "List HTML",
+                            file: "docs/list.html",
+                            type: "html"
+                        }
+                    ];
+
+                    // Check which files exist by attempting to fetch them
+                    const availableDocs = [];
+                    for (const doc of knownDocs) {
+                        try {
+                            const response = await fetch(doc.file, { method: 'HEAD' });
+                            if (response.ok) {
+                                availableDocs.push(doc);
+                            }
+                        } catch (error) {
+                            // If HEAD fails, try adding to list anyway for GitHub Pages
+                            availableDocs.push(doc);
+                        }
+                    }
+                    setDocList(availableDocs);
+                } catch (error) {
+                    console.error('Error loading document list:', error);
+                    setDocList([]);
+                } finally {
+                    setLoadingDocs(false);
+                }
+            };
+
+            const openDocumentList = () => {
+                loadDocumentList();
+            };
+
+            const openDocument = (doc) => {
+                setCurrentDoc(doc);
+                setDocList([]);
+                setShowDocViewer(true);
+            };
+
+            const closeDocViewer = () => {
+                setShowDocViewer(false);
+                setCurrentDoc(null);
+            };
+
+            // Document viewer modal component
+            const DocumentViewer = () => {
+                if (!showDocViewer || !currentDoc) return null;
+
+                const getViewerUrl = (doc) => {
+                    const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+                    const fullUrl = baseUrl + doc.file;
+
+                    if (doc.type === 'pdf') {
+                        return fullUrl;
+                    } else if (doc.type === 'excel') {
+                        return `https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+                    } else if (doc.type === 'html') {
+                        return fullUrl;
+                    } else {
+                        return `https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+                    }
+                };
+
+                return (
+                    <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center">
+                        <div className="bg-white rounded-lg w-full h-full max-w-6xl max-h-[95vh] flex flex-col m-4">
+                            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                                <div className="flex items-center">
+                                    <FileText className="w-5 h-5 mr-2 text-blue-600" />
+                                    <h3 className="text-lg font-semibold text-gray-800">{currentDoc.name}</h3>
+                                </div>
+                                <button
+                                    onClick={closeDocViewer}
+                                    className="btn-error px-4 py-2"
+                                >
+                                    <X className="w-4 h-4 mr-1" />
+                                    Thoát
+                                </button>
+                            </div>
+                            <div className="flex-1 p-4">
+                                <iframe
+                                    src={getViewerUrl(currentDoc)}
+                                    className="w-full h-full border border-gray-300 rounded"
+                                    title={currentDoc.name}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Document list modal component
+            const DocumentListModal = () => {
+                if (docList.length === 0 && !loadingDocs) return null;
+
+                return (
+                    <div className="fixed inset-0 z-40 bg-black bg-opacity-50 flex items-center justify-center">
+                        <div className="bg-white rounded-lg max-w-md w-full m-4">
+                            <div className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                                        <BookOpen className="w-5 h-5 mr-2 text-blue-600" />
+                                        Tài liệu tham khảo
+                                    </h3>
+                                    <button
+                                        onClick={() => {setDocList([]); setLoadingDocs(false);}}
+                                        className="text-gray-400 hover:text-gray-600"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                {loadingDocs ? (
+                                    <div className="text-center py-8">
+                                        <div className="spinner mx-auto mb-2"></div>
+                                        <p className="text-gray-600">Đang tải danh sách tài liệu...</p>
+                                    </div>
+                                ) : docList.length > 0 ? (
+                                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                                        {docList.map((doc, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => openDocument(doc)}
+                                                className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                                            >
+                                                <div className="flex items-center">
+                                                    <FileText className="w-4 h-4 mr-2 text-blue-600" />
+                                                    <span className="font-medium text-gray-800">{doc.name}</span>
+                                                </div>
+                                                <div className="text-xs text-gray-500 mt-1">
+                                                    {doc.type.toUpperCase()} • {doc.file}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-gray-600">
+                                        <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                                        <p>Không tìm thấy tài liệu tham khảo</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
 
             // Memoized QuizContent component to prevent unnecessary re-renders
             const QuizContent = React.memo(({
@@ -2753,6 +2940,17 @@
                             {/* Analytics Dashboard */}
                             <AnalyticsDashboard />
 
+                            {/* Reference Documents Button */}
+                            <div className="mb-8">
+                                <button
+                                    onClick={openDocumentList}
+                                    className="btn-primary px-6 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-shadow"
+                                >
+                                    <FileText className="w-5 h-5 mr-2" />
+                                    Xem tài liệu tham khảo
+                                </button>
+                            </div>
+
                             <div className="card card-shadow mb-8">
                                 <h2 className="text-2xl font-bold mb-6 text-gray-800">Hướng dẫn sử dụng</h2>
                                 <div className="text-left space-y-6">
@@ -3067,6 +3265,8 @@
                     <CreateQuizModal />
                     <CancelConfirmModal />
                     <ReviewModal />
+                    <DocumentListModal />
+                    <DocumentViewer />
                 </div>
             );
         };
