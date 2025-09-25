@@ -1838,49 +1838,39 @@
             const loadDocumentList = async () => {
                 setLoadingDocs(true);
                 try {
-                    // Since this is GitHub Pages, we'll use a predefined list of documents
+                    // For GitHub Pages, we use a predefined list without HEAD requests
+                    // Based on the actual files in your repository
                     const knownDocs = [
                         {
-                            name: "Slide truyền thông CX online",
-                            file: "docs/2. Slide truyen thong CX online_2025.pdf",
+                            name: "Slide truyền thông CX online 2025",
+                            file: "2.%20Slide%20truyen%20thong%20CX%20online_2025.pdf",
                             type: "pdf"
                         },
                         {
                             name: "Bản tin Quy 1.2025",
-                            file: "docs/Ban tin Quy 1.2025.pdf",
+                            file: "Ban%20tin%20Quy%201.2025.pdf",
                             type: "pdf"
                         },
                         {
-                            name: "DS SK triển khai tới CN",
-                            file: "docs/DS SK triển khai tới CN - T8.2025.xlsx",
+                            name: "DS SK triển khai tới CN - T8.2025",
+                            file: "DS%20SK%20tri%E1%BB%83n%20khai%20t%E1%BB%9Bi%20CN%20-%20T8.2025.xlsx",
                             type: "excel"
                         },
                         {
                             name: "Newsletter Q2.2025",
-                            file: "docs/Newsletter Q2.2025.pdf",
+                            file: "Newsletter%20Q2.2025.pdf",
                             type: "pdf"
                         },
                         {
                             name: "List HTML",
-                            file: "docs/list.html",
+                            file: "list.html",
                             type: "html"
                         }
                     ];
 
-                    // Check which files exist by attempting to fetch them
-                    const availableDocs = [];
-                    for (const doc of knownDocs) {
-                        try {
-                            const response = await fetch(doc.file, { method: 'HEAD' });
-                            if (response.ok) {
-                                availableDocs.push(doc);
-                            }
-                        } catch (error) {
-                            // If HEAD fails, try adding to list anyway for GitHub Pages
-                            availableDocs.push(doc);
-                        }
-                    }
-                    setDocList(availableDocs);
+                    // For GitHub Pages, we'll show all known docs without checking existence
+                    // since HEAD requests don't work properly
+                    setDocList(knownDocs);
                 } catch (error) {
                     console.error('Error loading document list:', error);
                     setDocList([]);
@@ -1909,8 +1899,21 @@
                 if (!showDocViewer || !currentDoc) return null;
 
                 const getViewerUrl = (doc) => {
-                    const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
-                    const fullUrl = baseUrl + doc.file;
+                    // For GitHub Pages, construct the correct URL path
+                    const baseUrl = window.location.origin;
+                    let repoPath = '';
+
+                    // Auto-detect repository path from current URL
+                    const currentPath = window.location.pathname;
+                    if (currentPath.includes('/Quiz-VTB')) {
+                        repoPath = '/Quiz-VTB';
+                    } else if (currentPath.includes('/quiz-vtb')) {
+                        repoPath = '/quiz-vtb';
+                    }
+                    // If no specific repo path detected, try relative path
+
+                    const fullUrl = `${baseUrl}${repoPath}/docs/${doc.file}`;
+                    console.log('Document URL:', fullUrl); // Debug logging
 
                     if (doc.type === 'pdf') {
                         return fullUrl;
@@ -1940,11 +1943,27 @@
                                 </button>
                             </div>
                             <div className="flex-1 p-4">
-                                <iframe
-                                    src={getViewerUrl(currentDoc)}
-                                    className="w-full h-full border border-gray-300 rounded"
-                                    title={currentDoc.name}
-                                />
+                                <div className="w-full h-full relative">
+                                    <iframe
+                                        src={getViewerUrl(currentDoc)}
+                                        className="w-full h-full border border-gray-300 rounded"
+                                        title={currentDoc.name}
+                                        onError={(e) => {
+                                            console.error('Error loading document:', e);
+                                        }}
+                                        onLoad={() => {
+                                            console.log('Document loaded successfully');
+                                        }}
+                                    />
+
+                                    {/* Fallback message */}
+                                    <div className="absolute bottom-4 left-4 right-4 bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+                                        <strong>Lưu ý:</strong> Nếu tài liệu không hiển thị, vui lòng thử:
+                                        <br />• Tải lại trang và thử lại
+                                        <br />• Mở trực tiếp: <a href={getViewerUrl(currentDoc)} target="_blank" className="text-blue-600 underline">Xem tài liệu</a>
+                                        <br />• Kiểm tra kết nối internet
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1990,7 +2009,7 @@
                                                     <span className="font-medium text-gray-800">{doc.name}</span>
                                                 </div>
                                                 <div className="text-xs text-gray-500 mt-1">
-                                                    {doc.type.toUpperCase()} • {doc.file}
+                                                    {doc.type.toUpperCase()} • docs/{decodeURIComponent(doc.file)}
                                                 </div>
                                             </button>
                                         ))}
